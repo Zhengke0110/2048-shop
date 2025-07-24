@@ -31,6 +31,7 @@
         <commons.codec.version>1.15</commons.codec.version>
         <mysql.connector.version>8.0.33</mysql.connector.version>
         <springdoc.openapi.version>2.2.0</springdoc.openapi.version>
+        <kaptcha.version>1.1.0</kaptcha.version>
 
         <docker.image.prefix>zhengke0110-2048-shop</docker.image.prefix>
 
@@ -105,6 +106,13 @@
                 <version>${springdoc.openapi.version}</version>
             </dependency>
 
+            <!--验证码kaptcha依赖包-->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>kaptcha-spring-boot-starter</artifactId>
+                <version>${kaptcha.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -152,69 +160,4 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-        <finalName>shop-test</finalName>
-        <plugins>
-
-            <!-- Maven 编译插件 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <compilerArgs>
-                        <arg>-parameters</arg>
-                    </compilerArgs>
-                </configuration>
-            </plugin>
-
-            <!-- Spring Boot 打包插件 -->
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring.boot.version}</version>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-
-            <!-- Docker 构建插件 -->
-            <plugin>
-                <groupId>io.fabric8</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <version>0.44.0</version>
-                <configuration>
-                    <verbose>true</verbose>
-                    <images>
-                        <image>
-                            <name>${docker.image.prefix}/${project.artifactId}</name>
-                            <build>
-                                <from>eclipse-temurin:17-jdk-jammy</from>
-                                <assembly>
-                                    <descriptorRef>artifact</descriptorRef>
-                                </assembly>
-                                <entryPoint>
-                                    <exec>
-                                        <arg>java</arg>
-                                        <arg>-jar</arg>
-                                        <arg>/maven/${project.build.finalName}.jar</arg>
-                                    </exec>
-                                </entryPoint>
-                            </build>
-                        </image>
-                    </images>
-                </configuration>
-            </plugin>
-
-        </plugins>
-    </build>
-
 </project>

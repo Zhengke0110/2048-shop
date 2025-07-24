@@ -5,6 +5,8 @@
     <file url="file://$PROJECT_DIR$/shop-common/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/shop-coupon-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/shop-coupon-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/shop-gateway/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/shop-gateway/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/shop-order-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/shop-order-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/shop-product-service/src/main/java" charset="UTF-8" />
