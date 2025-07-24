@@ -1,6 +1,6 @@
-package fun.timu.common.exception;
+package fun.timu.shop.common.exception;
 
-import fun.timu.common.util.JsonData;
+import fun.timu.shop.common.util.JsonData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;

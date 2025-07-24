@@ -9,6 +9,10 @@
     <modules>
         <module>shop-common</module>
         <module>shop-user-service</module>
+        <module>shop-product-service</module>
+        <module>shop-order-service</module>
+        <module>shop-coupon-service</module>
+        <module>shop-gateway</module>
     </modules>
     <properties>
         <java.version>17</java.version>

@@ -1,6 +1,6 @@
-package fun.timu.common.util;
+package fun.timu.shop.common.util;
 
-import fun.timu.common.enums.BizCodeEnum;
+import fun.timu.shop.common.enums.BizCodeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -1,6 +1,6 @@
-package fun.timu.common.exception;
+package fun.timu.shop.common.exception;
 
-import fun.timu.common.enums.BizCodeEnum;
+import fun.timu.shop.common.enums.BizCodeEnum;
 import lombok.Data;
 
 @Data
