@@ -71,9 +71,9 @@ public class SnowflakeIdGenerator {
     private long lastTimestamp = -1L;
     
     /**
-     * 单例实例
+     * 实例缓存，每个机器ID对应一个实例
      */
-    private static volatile SnowflakeIdGenerator instance;
+    private static final java.util.concurrent.ConcurrentHashMap<Long, SnowflakeIdGenerator> instances = new java.util.concurrent.ConcurrentHashMap<>();
     
     /**
      * 构造函数
@@ -90,20 +90,19 @@ public class SnowflakeIdGenerator {
     }
     
     /**
-     * 获取单例实例
+     * 获取指定机器ID的实例
      * 
      * @param machineId 机器ID
      * @return SnowflakeIdGenerator实例
      */
     public static SnowflakeIdGenerator getInstance(long machineId) {
-        if (instance == null) {
-            synchronized (SnowflakeIdGenerator.class) {
-                if (instance == null) {
-                    instance = new SnowflakeIdGenerator(machineId);
-                }
-            }
+        // 先验证machineId的有效性
+        if (machineId > MAX_MACHINE_ID || machineId < 0) {
+            throw new IllegalArgumentException(
+                String.format("机器ID必须在0到%d之间", MAX_MACHINE_ID));
         }
-        return instance;
+        
+        return instances.computeIfAbsent(machineId, SnowflakeIdGenerator::new);
     }
     
     /**
