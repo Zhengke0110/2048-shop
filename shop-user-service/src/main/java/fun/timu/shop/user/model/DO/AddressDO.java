@@ -1,9 +1,6 @@
 package fun.timu.shop.user.model.DO;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -64,9 +61,23 @@ public class AddressDO implements Serializable {
     private String detailAddress;
 
     /**
-     *
+     * 创建时间
      */
+    @TableField(fill = FieldFill.INSERT)
     private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private Date updateTime;
+
+    /**
+     * 删除标记：0->未删除；1->已删除
+     */
+    @TableLogic(value = "0", delval = "1")
+    @TableField(fill = FieldFill.INSERT)
+    private Integer delFlag;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

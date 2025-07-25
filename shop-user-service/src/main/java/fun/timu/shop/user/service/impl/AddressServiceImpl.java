@@ -263,7 +263,7 @@ public class AddressServiceImpl implements AddressService {
         Long addressId = idGeneratorComponent.generateId();
         addressDO.setId(addressId);
 
-        addressDO.setCreateTime(new Date());
+        // 设置用户ID，创建时间和删除标记会自动填充
         addressDO.setUserId(loginUser.getId());
 
         BeanUtils.copyProperties(addressAddReqeust, addressDO);
@@ -278,7 +278,8 @@ public class AddressServiceImpl implements AddressService {
                 // 修改为非默认收货地址
                 defaultAddressDO.setDefaultStatus(AddressStatusEnum.COMMON_STATUS.getStatus());
                 int updateRows = addressManager.update(defaultAddressDO);
-                log.debug("更新原默认地址状态, userId: {}, oldDefaultAddressId: {}, updateRows: {}", loginUser.getId(), defaultAddressDO.getId(), updateRows);
+                log.debug("更新原默认地址状态, userId: {}, oldDefaultAddressId: {}, updateRows: {}", 
+                         loginUser.getId(), defaultAddressDO.getId(), updateRows);
             }
         }
 
