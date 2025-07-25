@@ -1,17 +1,24 @@
 package fun.timu.shop.common.util;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 public class CommonUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(CommonUtil.class);
@@ -21,6 +28,8 @@ public class CommonUtil {
     private static final String LOCALHOST_IPV6 = "0:0:0:0:0:0:0:1";
     private static final int MAX_IP_LENGTH = 15;
     private static final String DIGITS = "0123456789";
+    private static final String ALL_CHAR_NUM = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * 获取客户端真实IP地址
@@ -107,6 +116,23 @@ public class CommonUtil {
     }
 
     /**
+     * 验证密码是否正确
+     *
+     * @param rawPassword 原始密码
+     * @param salt 盐值
+     * @param encodedPassword 已加密的密码
+     * @return 密码是否匹配
+     */
+    public static boolean verifyPassword(String rawPassword, String salt, String encodedPassword) {
+        if (rawPassword == null || salt == null || encodedPassword == null) {
+            return false;
+        }
+        String saltedPassword = rawPassword + salt;
+        String hashedPassword = sha256(saltedPassword);
+        return encodedPassword.equals(hashedPassword);
+    }
+
+    /**
      * 通用哈希方法
      */
     private static String hash(String data, String algorithm) {
@@ -167,4 +193,54 @@ public class CommonUtil {
     public static String generateUUID() {
         return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 32);
     }
+
+
+    /**
+     * 获取随机长度的字符串（包含数字和字母）
+     *
+     * @param length 生成字符串的长度，必须大于0
+     * @return 指定长度的随机字符串
+     * @throws IllegalArgumentException 当length <= 0时抛出
+     */
+    public static String getStringNumRandom(int length) {
+        if (length <= 0) {
+            throw new IllegalArgumentException("Length must be positive");
+        }
+
+        StringBuilder saltString = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            saltString.append(ALL_CHAR_NUM.charAt(ThreadLocalRandom.current().nextInt(ALL_CHAR_NUM.length())));
+        }
+        return saltString.toString();
+    }
+
+
+    /**
+     * 响应JSON数据给前端
+     *
+     * @param response HTTP响应对象，不能为null
+     * @param obj      要序列化为JSON的对象
+     * @throws IllegalArgumentException 当response为null时抛出
+     */
+    public static void sendJsonMessage(HttpServletResponse response, Object obj) {
+        if (response == null) {
+            throw new IllegalArgumentException("HttpServletResponse cannot be null");
+        }
+
+        response.setContentType("application/json; charset=utf-8");
+        response.setStatus(HttpServletResponse.SC_OK);
+
+        try (PrintWriter writer = response.getWriter()) {
+            String jsonString = OBJECT_MAPPER.writeValueAsString(obj);
+            writer.print(jsonString);
+            response.flushBuffer();
+        } catch (IOException e) {
+            logger.error("Failed to send JSON response to client", e);
+            // 设置错误状态码
+            if (!response.isCommitted()) {
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            }
+        }
+    }
+
 }

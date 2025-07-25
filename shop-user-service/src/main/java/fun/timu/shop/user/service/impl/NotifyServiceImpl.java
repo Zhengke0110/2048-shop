@@ -37,12 +37,12 @@ public class NotifyServiceImpl implements NotifyService {
     /**
      * 验证码的内容
      */
-    private static final String CONTENT = "您的验证码是%s,有效时间是60秒,打死也不要告诉任何人";
+    private static final String CONTENT = "您的验证码是%s,有效时间是5分钟,打死也不要告诉任何人";
 
     /**
      * 验证码10分钟有效
      */
-    private static final int CODE_EXPIRED = 60 * 1000 * 10;
+    private static final int CODE_EXPIRED = 60 * 1000 * 5;
 
     @Override
     public JsonData sendCode(SendCodeEnum sendCodeEnum, String to) {
@@ -93,7 +93,7 @@ public class NotifyServiceImpl implements NotifyService {
                     return JsonData.buildSuccess();
                 } catch (BizException e) {
                     // 发送失败，删除已存储的验证码
-                    redisTemplate.delete(cacheKey);
+                    this.deleteCodeFromCache(cacheKey);
                     log.error("邮箱验证码发送失败, to: {}, 错误: {}", to, e.getMsg());
                     return JsonData.buildResult(BizCodeEnum.CODE_SEND_FAIL);
                 }
@@ -103,27 +103,86 @@ public class NotifyServiceImpl implements NotifyService {
                     // TODO: 实现短信发送服务
                     log.warn("短信验证码发送功能暂未实现, to: {}", to);
                     // 发送失败，删除已存储的验证码
-                    redisTemplate.delete(cacheKey);
+                    this.deleteCodeFromCache(cacheKey);
                     return JsonData.buildResult(BizCodeEnum.CODE_SEND_FAIL);
                 } catch (Exception e) {
                     // 发送失败，删除已存储的验证码
-                    redisTemplate.delete(cacheKey);
+                    this.deleteCodeFromCache(cacheKey);
                     log.error("短信验证码发送失败, to: {}, 错误: {}", to, e.getMessage(), e);
                     return JsonData.buildResult(BizCodeEnum.CODE_SEND_FAIL);
                 }
+            } else {
+                // 不支持的接收地址类型
+                this.deleteCodeFromCache(cacheKey);
+                log.error("不支持的接收地址类型, to: {}", to);
+                return JsonData.buildResult(BizCodeEnum.CODE_TO_ERROR);
             }
 
         } catch (Exception e) {
             log.error("验证码发送过程中发生异常, to: {}, 验证码类型: {}, 异常: {}", to, sendCodeEnum.name(), e.getMessage(), e);
             // 发生异常时，尝试清除可能已存储的验证码
-            try {
-                redisTemplate.delete(cacheKey);
-            } catch (Exception deleteException) {
-                log.warn("删除验证码缓存失败: {}", deleteException.getMessage());
-            }
+            this.deleteCodeFromCache(cacheKey);
             return JsonData.buildResult(BizCodeEnum.CODE_SEND_FAIL);
         }
+    }
 
-        return JsonData.buildResult(BizCodeEnum.CODE_TO_ERROR);
+    /**
+     * 安全删除缓存中的验证码
+     */
+    private void deleteCodeFromCache(String cacheKey) {
+        try {
+            redisTemplate.delete(cacheKey);
+        } catch (Exception deleteException) {
+            log.warn("删除验证码缓存失败, cacheKey: {}, 异常: {}", cacheKey, deleteException.getMessage());
+        }
+    }
+
+
+    @Override
+    public boolean checkCode(SendCodeEnum sendCodeEnum, String to, String code) {
+        // 参数校验
+        if (sendCodeEnum == null) {
+            log.error("验证码校验失败：验证码类型不能为空");
+            return false;
+        }
+
+        if (StringUtils.isBlank(to)) {
+            log.error("验证码校验失败：接收地址不能为空");
+            return false;
+        }
+
+        if (StringUtils.isBlank(code)) {
+            log.error("验证码校验失败：验证码不能为空");
+            return false;
+        }
+
+        String cacheKey = String.format(CacheKey.CHECK_CODE_KEY, sendCodeEnum.name(), to);
+
+        try {
+            String cacheValue = redisTemplate.opsForValue().get(cacheKey);
+            if (StringUtils.isNotBlank(cacheValue)) {
+                String[] parts = cacheValue.split("_");
+                if (parts.length != 2) {
+                    log.warn("验证码格式异常, cacheKey: {}", cacheKey);
+                    return false;
+                }
+
+                String cacheCode = parts[0];
+                if (cacheCode.equals(code)) {
+                    // 验证成功，删除验证码
+                    redisTemplate.delete(cacheKey);
+                    log.info("验证码校验成功, to: {}, 验证码类型: {}", to, sendCodeEnum.name());
+                    return true;
+                } else {
+                    log.warn("验证码不匹配, to: {}, 验证码类型: {}", to, sendCodeEnum.name());
+                }
+            } else {
+                log.warn("验证码不存在或已过期, to: {}, 验证码类型: {}", to, sendCodeEnum.name());
+            }
+        } catch (Exception e) {
+            log.error("验证码校验过程中发生异常, to: {}, 验证码类型: {}, 异常: {}", to, sendCodeEnum.name(), e.getMessage(), e);
+        }
+
+        return false;
     }
 }

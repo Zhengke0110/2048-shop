@@ -9,7 +9,7 @@ CREATE TABLE `user`
     `points`      int(10) DEFAULT '0' COMMENT '积分',
     `create_time` datetime     DEFAULT NULL,
     `mail`        varchar(64)  DEFAULT NULL COMMENT '邮箱',
-    `secret`      varchar(12)  DEFAULT NULL COMMENT '盐，用于个人敏感信息处理',
+    `secret`      varchar(16)  DEFAULT NULL COMMENT '盐，用于个人敏感信息处理',
     PRIMARY KEY (`id`),
     UNIQUE KEY `mail_idx` (`mail`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;

@@ -28,7 +28,11 @@ public enum BizCodeEnum {
      * 系统异常
      */
     SYSTEM_TIMEOUT_ERROR(500001, "系统繁忙，请稍后重试"),
-    SYSTEM_ERROR(500002, "系统内部错误，请稍后重试");
+    SYSTEM_ERROR(500002, "系统内部错误，请稍后重试"),
+    /**
+     * 文件相关
+     */
+    FILE_UPLOAD_USER_IMG_FAIL(600101,"用户头像文件上传失败");
 
 
     @Getter

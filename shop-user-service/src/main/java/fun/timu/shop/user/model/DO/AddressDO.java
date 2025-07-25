@@ -16,7 +16,7 @@ import java.util.Date;
  */
 @TableName(value = "address")
 @Data
-public class Address implements Serializable {
+public class AddressDO implements Serializable {
     /**
      *
      */
