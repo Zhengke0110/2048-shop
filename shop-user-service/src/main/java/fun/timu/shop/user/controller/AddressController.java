@@ -48,7 +48,7 @@ public class AddressController {
      * @return
      */
     @DeleteMapping("/del/{address_id}")
-    public JsonData del(@PathVariable("address_id") int addressId) {
+    public JsonData del(@PathVariable("address_id") Long addressId) {
         return addressService.del(addressId);
     }
 

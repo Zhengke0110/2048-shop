@@ -13,7 +13,7 @@ public interface AddressManager {
 
     int insert(AddressDO addressDO);
 
-    int deleteById(int addressId, Long userId);
+    int deleteById(Long addressId, Long userId);
 
     List<AddressDO> selectListByUserId(Long userId);
 }

@@ -43,7 +43,7 @@ public class AddressManagerImpl implements AddressManager {
     }
 
     @Override
-    public int deleteById(int addressId, Long userId) {
+    public int deleteById(Long addressId, Long userId) {
         addressMapper.delete(new QueryWrapper<AddressDO>().eq("id", addressId).eq("user_id", userId));
         return 0;
     }

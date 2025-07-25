@@ -36,7 +36,7 @@ public interface AddressService {
      * @param addressId
      * @return
      */
-    JsonData del(int addressId);
+    JsonData del(Long addressId);
 
     /**
      * 查找用户全部收货地址

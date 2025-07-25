@@ -41,6 +41,8 @@ public enum BizCodeEnum {
     ADDRESS_ADD_FAIL(290001, "新增收货地址失败"),
     ADDRESS_DEL_FAIL(290002, "删除收货地址失败"),
     ADDRESS_NO_EXITS(290003, "地址不存在"),
+    ADDRESS_PARAM_ERROR(290004, "地址参数错误"),
+    ADDRESS_ACCESS_DENIED(290005, "无权限访问该地址"),
 
     /**
      * 系统异常
