@@ -43,8 +43,7 @@ public class UserServiceImpl implements UserService {
     private final UserManager userManager;
     private final RefreshTokenManager refreshTokenManager;
 
-    public UserServiceImpl(FileService fileService, NotifyService notifyService, UserManager userManager, 
-                          StringRedisTemplate redisTemplate, RefreshTokenManager refreshTokenManager) {
+    public UserServiceImpl(FileService fileService, NotifyService notifyService, UserManager userManager, StringRedisTemplate redisTemplate, RefreshTokenManager refreshTokenManager) {
         this.fileService = fileService;
         this.notifyService = notifyService;
         this.userManager = userManager;
@@ -121,7 +120,7 @@ public class UserServiceImpl implements UserService {
 
                 // 生成Token对
                 TokenPairVO tokenPair = JWTUtil.generateTokenPair(loginUser);
-                
+
                 // 提取Refresh Token的JTI并存储到Redis
                 Claims refreshClaims = JWTUtil.checkRefreshToken(tokenPair.getRefreshToken());
                 if (refreshClaims != null) {
@@ -155,7 +154,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public JsonData refreshToken(RefreshTokenRequest refreshTokenRequest) {
         String refreshToken = refreshTokenRequest.getRefreshToken();
-        
+
         // 1. 验证Refresh Token格式和签名
         Claims claims = JWTUtil.checkRefreshToken(refreshToken);
         if (claims == null) {
@@ -200,8 +199,7 @@ public class UserServiceImpl implements UserService {
             refreshTokenManager.storeRefreshToken(loginUser.getId(), newTokenId, loginUser, tokenInfo.getFamilyId());
         }
 
-        log.info("刷新Token成功, userId: {}, oldTokenId: {}, newTokenId: {}", 
-                loginUser.getId(), tokenId, JWTUtil.getTokenId(newRefreshClaims));
+        log.info("刷新Token成功, userId: {}, oldTokenId: {}, newTokenId: {}", loginUser.getId(), tokenId, JWTUtil.getTokenId(newRefreshClaims));
 
         return JsonData.buildSuccess(newTokenPair);
     }
