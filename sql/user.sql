@@ -1,6 +1,6 @@
 CREATE TABLE `user`
 (
-    `id`          bigint(11) unsigned NOT NULL AUTO_INCREMENT,
+    `id`          bigint(20) unsigned NOT NULL COMMENT '用户ID，使用分布式ID生成器生成',
     `name`        varchar(128) DEFAULT NULL COMMENT '昵称',
     `pwd`         varchar(124) DEFAULT NULL COMMENT '密码',
     `head_img`    varchar(524) DEFAULT NULL COMMENT '头像',
@@ -12,11 +12,11 @@ CREATE TABLE `user`
     `secret`      varchar(16)  DEFAULT NULL COMMENT '盐，用于个人敏感信息处理',
     PRIMARY KEY (`id`),
     UNIQUE KEY `mail_idx` (`mail`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `address`
 (
-    `id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `id`             bigint(20) unsigned NOT NULL COMMENT '地址ID，使用分布式ID生成器生成',
     `user_id`        bigint(20) DEFAULT NULL COMMENT '用户id',
     `default_status` int(1) DEFAULT NULL COMMENT '是否默认收货地址：0->否；1->是',
     `receive_name`   varchar(64)  DEFAULT NULL COMMENT '收发货人姓名',
@@ -27,4 +27,4 @@ CREATE TABLE `address`
     `detail_address` varchar(200) DEFAULT NULL COMMENT '详细地址',
     `create_time`    datetime     DEFAULT NULL,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COMMENT='电商-公司收发货地址表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='电商-公司收发货地址表';

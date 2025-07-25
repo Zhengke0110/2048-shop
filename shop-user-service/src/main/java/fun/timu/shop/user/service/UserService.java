@@ -4,6 +4,7 @@ import fun.timu.shop.common.util.JsonData;
 import fun.timu.shop.user.controller.request.RefreshTokenRequest;
 import fun.timu.shop.user.controller.request.UserLoginRequest;
 import fun.timu.shop.user.controller.request.UserRegisterRequest;
+import fun.timu.shop.user.model.VO.UserVO;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -18,6 +19,8 @@ public interface UserService {
     JsonData login(UserLoginRequest userLoginRequest);
 
     JsonData uploadUserImg(MultipartFile file);
+
+    UserVO findUserDetail();
 
     /**
      * 刷新Token

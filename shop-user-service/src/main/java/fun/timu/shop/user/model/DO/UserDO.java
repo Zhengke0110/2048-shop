@@ -17,9 +17,9 @@ import java.util.Date;
 @Data
 public class UserDO implements Serializable {
     /**
-     * 
+     * 用户ID - 使用分布式ID生成器生成
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /**

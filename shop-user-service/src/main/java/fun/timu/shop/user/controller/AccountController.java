@@ -4,6 +4,7 @@ import fun.timu.shop.common.util.JsonData;
 import fun.timu.shop.user.controller.request.RefreshTokenRequest;
 import fun.timu.shop.user.controller.request.UserLoginRequest;
 import fun.timu.shop.user.controller.request.UserRegisterRequest;
+import fun.timu.shop.user.model.VO.UserVO;
 import fun.timu.shop.user.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -72,6 +73,17 @@ public class AccountController {
     @PostMapping("logout")
     public JsonData logout(@RequestHeader(value = "Refresh-Token", required = false) String refreshToken) {
         return userService.logout(refreshToken);
+    }
+
+    /**
+     * 获取用户详情
+     *
+     * @return 用户详情
+     */
+    @GetMapping("detail")
+    public JsonData detail() {
+        UserVO userVO = userService.findUserDetail();
+        return JsonData.buildSuccess(userVO);
     }
 
 }

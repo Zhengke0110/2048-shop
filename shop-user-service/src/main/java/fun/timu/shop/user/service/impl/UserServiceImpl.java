@@ -1,7 +1,9 @@
 package fun.timu.shop.user.service.impl;
 
+import fun.timu.shop.common.components.IdGeneratorComponent;
 import fun.timu.shop.common.enums.BizCodeEnum;
 import fun.timu.shop.common.enums.SendCodeEnum;
+import fun.timu.shop.common.interceptor.LoginInterceptor;
 import fun.timu.shop.common.model.LoginUser;
 import fun.timu.shop.common.model.TokenPairVO;
 import fun.timu.shop.common.util.CommonUtil;
@@ -15,6 +17,7 @@ import fun.timu.shop.user.components.RefreshTokenManager;
 import fun.timu.shop.user.manager.UserManager;
 import fun.timu.shop.user.model.DO.UserDO;
 import fun.timu.shop.user.model.RefreshTokenInfo;
+import fun.timu.shop.user.model.VO.UserVO;
 import fun.timu.shop.user.service.NotifyService;
 import fun.timu.shop.user.service.UserService;
 import io.jsonwebtoken.Claims;
@@ -42,12 +45,14 @@ public class UserServiceImpl implements UserService {
     private final NotifyService notifyService;
     private final UserManager userManager;
     private final RefreshTokenManager refreshTokenManager;
+    private final IdGeneratorComponent idGeneratorComponent;
 
-    public UserServiceImpl(FileService fileService, NotifyService notifyService, UserManager userManager, StringRedisTemplate redisTemplate, RefreshTokenManager refreshTokenManager) {
+    public UserServiceImpl(FileService fileService, NotifyService notifyService, UserManager userManager, StringRedisTemplate redisTemplate, RefreshTokenManager refreshTokenManager, IdGeneratorComponent idGeneratorComponent) {
         this.fileService = fileService;
         this.notifyService = notifyService;
         this.userManager = userManager;
         this.refreshTokenManager = refreshTokenManager;
+        this.idGeneratorComponent = idGeneratorComponent;
     }
 
     /**
@@ -72,6 +77,10 @@ public class UserServiceImpl implements UserService {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(registerRequest, userDO);
 
+        // 生成分布式ID
+        Long userId = idGeneratorComponent.generateId();
+        userDO.setId(userId);
+        
         userDO.setCreateTime(new Date());
         userDO.setSlogan("人生需要动态规划，学习需要贪心算法");
 
@@ -87,7 +96,7 @@ public class UserServiceImpl implements UserService {
         if (userManager.checkUnique(userDO.getMail())) {
 
             int rows = userManager.insert(userDO);
-            log.info("rows:{},注册成功:{}", rows, userDO.toString());
+            log.info("rows:{},注册成功:{}, 生成的用户ID:{}", rows, userDO.toString(), userId);
 
             //新用户注册成功，初始化信息，发放福利等 TODO
             userRegisterInitTask(userDO);
@@ -115,7 +124,7 @@ public class UserServiceImpl implements UserService {
 
             if (passwordMatch) {
                 //登录成功,生成双Token
-                LoginUser loginUser = new LoginUser();
+                LoginUser loginUser = LoginUser.builder().build();
                 BeanUtils.copyProperties(userDO, loginUser);
 
                 // 生成Token对
@@ -143,6 +152,15 @@ public class UserServiceImpl implements UserService {
     public JsonData uploadUserImg(MultipartFile file) {
         String result = fileService.uploadUserImg(file);
         return result != null ? JsonData.buildSuccess(result) : JsonData.buildResult(BizCodeEnum.FILE_UPLOAD_USER_IMG_FAIL);
+    }
+
+    @Override
+    public UserVO findUserDetail() {
+        LoginUser loginUser = LoginInterceptor.threadLocal.get();
+        UserDO userDO = userManager.selectOne(loginUser.getId());
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(userDO, userVO);
+        return userVO;
     }
 
     /**

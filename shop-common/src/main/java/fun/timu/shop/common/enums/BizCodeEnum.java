@@ -23,7 +23,7 @@ public enum BizCodeEnum {
     ACCOUNT_REPEAT(250001, "账号已经存在"),
     ACCOUNT_UNREGISTER(250002, "账号不存在"),
     ACCOUNT_PWD_ERROR(250003, "账号或者密码错误"),
-    ACCOUNT_UNLOGIN(250004,"账号未登录"),
+    ACCOUNT_UNLOGIN(250004, "账号未登录"),
 
 
     /**
@@ -36,6 +36,13 @@ public enum BizCodeEnum {
     REFRESH_TOKEN_NOT_FOUND(260005, "刷新令牌不存在"),
 
     /**
+     * 收货地址
+     */
+    ADDRESS_ADD_FAIL(290001, "新增收货地址失败"),
+    ADDRESS_DEL_FAIL(290002, "删除收货地址失败"),
+    ADDRESS_NO_EXITS(290003, "地址不存在"),
+
+    /**
      * 系统异常
      */
     SYSTEM_TIMEOUT_ERROR(500001, "系统繁忙，请稍后重试"),
@@ -43,7 +50,7 @@ public enum BizCodeEnum {
     /**
      * 文件相关
      */
-    FILE_UPLOAD_USER_IMG_FAIL(600101,"用户头像文件上传失败");
+    FILE_UPLOAD_USER_IMG_FAIL(600101, "用户头像文件上传失败");
 
 
     @Getter

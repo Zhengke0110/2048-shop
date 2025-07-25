@@ -22,7 +22,7 @@ public class UserManagerImpl implements UserManager {
 
         List<UserDO> list = userMapper.selectList(queryWrapper);
 
-        return list.size() > 0 ? false : true;
+        return list.isEmpty();
 
     }
 
@@ -35,6 +35,12 @@ public class UserManagerImpl implements UserManager {
     public List<UserDO> selectList(String mail) {
         List<UserDO> userDOList = userMapper.selectList(new QueryWrapper<UserDO>().eq("mail", mail));
         return userDOList.isEmpty() ? null : userDOList;
+    }
+
+    @Override
+    public UserDO selectOne(Long id) {
+        UserDO userDO = userMapper.selectOne(new QueryWrapper<UserDO>().eq("id", id));
+        return userDO;
     }
 
 }

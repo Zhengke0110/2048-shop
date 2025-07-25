@@ -43,3 +43,11 @@ mybatis-plus:
 logging:
   level:
     root: INFO
+
+# 应用配置
+app:
+  # Snowflake ID生成器配置
+  snowflake:
+    # 机器ID (0-1023)，不同的服务实例需要配置不同的机器ID
+    # 如果不配置，将自动根据IP地址生成
+    machine-id: 1

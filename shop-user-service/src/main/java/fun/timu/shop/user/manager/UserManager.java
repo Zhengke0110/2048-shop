@@ -10,4 +10,6 @@ public interface UserManager {
     int insert(UserDO userDO);
 
     List<UserDO> selectList(String mail);
+
+    UserDO selectOne(Long id);
 }
