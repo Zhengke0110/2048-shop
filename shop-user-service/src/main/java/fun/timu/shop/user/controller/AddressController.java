@@ -49,7 +49,12 @@ public class AddressController {
      */
     @DeleteMapping("/del/{address_id}")
     public JsonData del(@PathVariable("address_id") Long addressId) {
-        return addressService.del(addressId);
+        try {
+            return addressService.del(addressId);
+        } catch (Exception e) {
+            // 可根据需要记录日志或返回具体错误信息
+            return JsonData.buildResult(BizCodeEnum.ADDRESS_DEL_FAIL);
+        }
     }
 
     /**

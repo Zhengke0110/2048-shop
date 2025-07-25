@@ -25,9 +25,7 @@ public class AddressManagerImpl implements AddressManager {
 
     @Override
     public AddressDO selectOne(Long userId, int status) {
-        AddressDO defaultAddressDO = addressMapper.selectOne(new QueryWrapper<AddressDO>()
-                .eq("user_id", userId)
-                .eq("default_status", AddressStatusEnum.DEFAULT_STATUS.getStatus()));
+        AddressDO defaultAddressDO = addressMapper.selectOne(new QueryWrapper<AddressDO>().eq("user_id", userId).eq("default_status", AddressStatusEnum.DEFAULT_STATUS.getStatus()));
 
         return defaultAddressDO;
     }
@@ -44,8 +42,7 @@ public class AddressManagerImpl implements AddressManager {
 
     @Override
     public int deleteById(Long addressId, Long userId) {
-        addressMapper.delete(new QueryWrapper<AddressDO>().eq("id", addressId).eq("user_id", userId));
-        return 0;
+        return addressMapper.delete(new QueryWrapper<AddressDO>().eq("id", addressId).eq("user_id", userId));
     }
 
     @Override
