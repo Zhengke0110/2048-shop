@@ -3,16 +3,21 @@ package fun.timu.shop.user.service.impl;
 import fun.timu.shop.common.enums.BizCodeEnum;
 import fun.timu.shop.common.enums.SendCodeEnum;
 import fun.timu.shop.common.model.LoginUser;
+import fun.timu.shop.common.model.TokenPairVO;
 import fun.timu.shop.common.util.CommonUtil;
 import fun.timu.shop.common.util.JWTUtil;
 import fun.timu.shop.common.util.JsonData;
 import fun.timu.shop.user.components.FileService;
+import fun.timu.shop.user.controller.request.RefreshTokenRequest;
 import fun.timu.shop.user.controller.request.UserLoginRequest;
 import fun.timu.shop.user.controller.request.UserRegisterRequest;
+import fun.timu.shop.user.components.RefreshTokenManager;
 import fun.timu.shop.user.manager.UserManager;
 import fun.timu.shop.user.model.DO.UserDO;
+import fun.timu.shop.user.model.RefreshTokenInfo;
 import fun.timu.shop.user.service.NotifyService;
 import fun.timu.shop.user.service.UserService;
+import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -22,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author zhengke
@@ -35,13 +41,14 @@ public class UserServiceImpl implements UserService {
     private final FileService fileService;
     private final NotifyService notifyService;
     private final UserManager userManager;
-    private final StringRedisTemplate redisTemplate;
+    private final RefreshTokenManager refreshTokenManager;
 
-    public UserServiceImpl(FileService fileService, NotifyService notifyService, UserManager userManager, StringRedisTemplate redisTemplate) {
+    public UserServiceImpl(FileService fileService, NotifyService notifyService, UserManager userManager, 
+                          StringRedisTemplate redisTemplate, RefreshTokenManager refreshTokenManager) {
         this.fileService = fileService;
         this.notifyService = notifyService;
         this.userManager = userManager;
-        this.redisTemplate = redisTemplate;
+        this.refreshTokenManager = refreshTokenManager;
     }
 
     /**
@@ -108,19 +115,22 @@ public class UserServiceImpl implements UserService {
             boolean passwordMatch = CommonUtil.verifyPassword(userLoginRequest.getPwd(), userDO.getSecret(), userDO.getPwd());
 
             if (passwordMatch) {
-                //登录成功,生成token TODO
-
+                //登录成功,生成双Token
                 LoginUser loginUser = new LoginUser();
                 BeanUtils.copyProperties(userDO, loginUser);
 
-                String accessToken = JWTUtil.geneJsonWebToken(loginUser);
-                // accessToken
-                // accessToken的过期时间
-                // UUID生成一个token
-                //String refreshToken = CommonUtil.generateUUID();
-                //redisTemplate.opsForValue().set(refreshToken,"1",1000*60*60*24*30);
+                // 生成Token对
+                TokenPairVO tokenPair = JWTUtil.generateTokenPair(loginUser);
+                
+                // 提取Refresh Token的JTI并存储到Redis
+                Claims refreshClaims = JWTUtil.checkRefreshToken(tokenPair.getRefreshToken());
+                if (refreshClaims != null) {
+                    String tokenId = JWTUtil.getTokenId(refreshClaims);
+                    String familyId = UUID.randomUUID().toString(); // 生成Token家族ID
+                    refreshTokenManager.storeRefreshToken(loginUser.getId(), tokenId, loginUser, familyId);
+                }
 
-                return JsonData.buildSuccess(accessToken);
+                return JsonData.buildSuccess(tokenPair);
             } else {
                 return JsonData.buildResult(BizCodeEnum.ACCOUNT_PWD_ERROR);
             }
@@ -134,6 +144,95 @@ public class UserServiceImpl implements UserService {
     public JsonData uploadUserImg(MultipartFile file) {
         String result = fileService.uploadUserImg(file);
         return result != null ? JsonData.buildSuccess(result) : JsonData.buildResult(BizCodeEnum.FILE_UPLOAD_USER_IMG_FAIL);
+    }
+
+    /**
+     * 刷新Token
+     *
+     * @param refreshTokenRequest 刷新Token请求
+     * @return 新的Token对
+     */
+    @Override
+    public JsonData refreshToken(RefreshTokenRequest refreshTokenRequest) {
+        String refreshToken = refreshTokenRequest.getRefreshToken();
+        
+        // 1. 验证Refresh Token格式和签名
+        Claims claims = JWTUtil.checkRefreshToken(refreshToken);
+        if (claims == null) {
+            return JsonData.buildResult(BizCodeEnum.REFRESH_TOKEN_INVALID);
+        }
+
+        // 2. 检查Token是否过期
+        if (JWTUtil.isTokenExpired(claims)) {
+            return JsonData.buildResult(BizCodeEnum.REFRESH_TOKEN_EXPIRED);
+        }
+
+        // 3. 从Claims中提取用户信息
+        LoginUser loginUser = JWTUtil.extractLoginUser(claims);
+        if (loginUser == null || loginUser.getId() == null) {
+            return JsonData.buildResult(BizCodeEnum.REFRESH_TOKEN_INVALID);
+        }
+
+        // 4. 验证Redis中的Refresh Token
+        String tokenId = JWTUtil.getTokenId(claims);
+        RefreshTokenInfo tokenInfo = refreshTokenManager.validateRefreshToken(loginUser.getId(), tokenId);
+        if (tokenInfo == null) {
+            return JsonData.buildResult(BizCodeEnum.REFRESH_TOKEN_NOT_FOUND);
+        }
+
+        // 5. 安全检查：检测Token家族异常
+        if (refreshTokenManager.detectTokenFamilyAnomaly(loginUser.getId(), tokenInfo.getFamilyId(), tokenId)) {
+            // 检测到异常，清理所有Token
+            refreshTokenManager.removeAllRefreshTokens(loginUser.getId());
+            return JsonData.buildResult(BizCodeEnum.REFRESH_TOKEN_INVALID);
+        }
+
+        // 6. 删除旧的Refresh Token（Token轮转）
+        refreshTokenManager.removeRefreshToken(loginUser.getId(), tokenId);
+
+        // 7. 生成新的Token对
+        TokenPairVO newTokenPair = JWTUtil.generateTokenPair(loginUser);
+
+        // 8. 存储新的Refresh Token
+        Claims newRefreshClaims = JWTUtil.checkRefreshToken(newTokenPair.getRefreshToken());
+        if (newRefreshClaims != null) {
+            String newTokenId = JWTUtil.getTokenId(newRefreshClaims);
+            refreshTokenManager.storeRefreshToken(loginUser.getId(), newTokenId, loginUser, tokenInfo.getFamilyId());
+        }
+
+        log.info("刷新Token成功, userId: {}, oldTokenId: {}, newTokenId: {}", 
+                loginUser.getId(), tokenId, JWTUtil.getTokenId(newRefreshClaims));
+
+        return JsonData.buildSuccess(newTokenPair);
+    }
+
+    /**
+     * 登出
+     *
+     * @param refreshToken 刷新Token
+     * @return 操作结果
+     */
+    @Override
+    public JsonData logout(String refreshToken) {
+        if (StringUtils.isBlank(refreshToken)) {
+            return JsonData.buildSuccess(); // 没有Token也算登出成功
+        }
+
+        // 验证Refresh Token
+        Claims claims = JWTUtil.checkRefreshToken(refreshToken);
+        if (claims == null) {
+            return JsonData.buildSuccess(); // Token无效也算登出成功
+        }
+
+        // 提取用户信息
+        LoginUser loginUser = JWTUtil.extractLoginUser(claims);
+        if (loginUser != null && loginUser.getId() != null) {
+            // 清理用户所有Token
+            refreshTokenManager.removeAllRefreshTokens(loginUser.getId());
+            log.info("用户登出成功, userId: {}", loginUser.getId());
+        }
+
+        return JsonData.buildSuccess();
     }
 
     /**

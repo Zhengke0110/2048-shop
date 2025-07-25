@@ -25,6 +25,15 @@ public enum BizCodeEnum {
     ACCOUNT_PWD_ERROR(250003, "账号或者密码错误"),
 
     /**
+     * Token相关
+     */
+    TOKEN_EXPIRED(260001, "访问令牌已过期"),
+    TOKEN_INVALID(260002, "访问令牌无效"),
+    REFRESH_TOKEN_EXPIRED(260003, "刷新令牌已过期"),
+    REFRESH_TOKEN_INVALID(260004, "刷新令牌无效"),
+    REFRESH_TOKEN_NOT_FOUND(260005, "刷新令牌不存在"),
+
+    /**
      * 系统异常
      */
     SYSTEM_TIMEOUT_ERROR(500001, "系统繁忙，请稍后重试"),
