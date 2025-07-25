@@ -14,14 +14,21 @@ public enum BizCodeEnum {
     CODE_TO_ERROR(240001, "接收号码不合规"),
     CODE_LIMITED(240002, "验证码发送过快"),
     CODE_ERROR(240003, "验证码错误"),
-    CODE_CAPTCHA(240101, "图形验证码错误"),
+    CODE_CAPTCHA_ERROR(240101, "图形验证码错误"),
+    CODE_SEND_FAIL(240004, "验证码发送失败"),
 
     /**
      * 账号
      */
     ACCOUNT_REPEAT(250001, "账号已经存在"),
     ACCOUNT_UNREGISTER(250002, "账号不存在"),
-    ACCOUNT_PWD_ERROR(250003, "账号或者密码错误");
+    ACCOUNT_PWD_ERROR(250003, "账号或者密码错误"),
+
+    /**
+     * 系统异常
+     */
+    SYSTEM_TIMEOUT_ERROR(500001, "系统繁忙，请稍后重试"),
+    SYSTEM_ERROR(500002, "系统内部错误，请稍后重试");
 
 
     @Getter

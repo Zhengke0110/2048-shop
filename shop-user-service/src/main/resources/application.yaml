@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: shop-user-service
+  #激活开发环境配置
+  profiles:
+    active: dev
 
   #数据库配置
   datasource:
@@ -27,10 +30,13 @@ spring:
           max-wait: -1ms # 连接池最大阻塞等待时间(使用负值表示没有限制)
         shutdown-timeout: 100ms # 关闭超时时间
 
+
 #配置plus打印sql日志
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:/mapper/*.xml
+  type-aliases-package: fun.timu.shop.user.model.DO
 
 
 #设置日志级别,ERROR/WARN/INFO/DEBUG,默认是INFO以上才显示
