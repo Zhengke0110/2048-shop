@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fun.timu.shop.coupon.mapper.CouponRecordMapper">
+
+    <resultMap id="BaseResultMap" type="fun.timu.shop.coupon.model.DO.CouponRecordDO">
+            <id property="id" column="id" />
+            <result property="couponId" column="coupon_id" />
+            <result property="createTime" column="create_time" />
+            <result property="useState" column="use_state" />
+            <result property="userId" column="user_id" />
+            <result property="userName" column="user_name" />
+            <result property="couponTitle" column="coupon_title" />
+            <result property="startTime" column="start_time" />
+            <result property="endTime" column="end_time" />
+            <result property="orderId" column="order_id" />
+            <result property="price" column="price" />
+            <result property="conditionPrice" column="condition_price" />
+            <result property="useTime" column="use_time" />
+            <result property="actualDiscountAmount" column="actual_discount_amount" />
+            <result property="receiveChannel" column="receive_channel" />
+            <result property="shareUserId" column="share_user_id" />
+            <result property="updateTime" column="update_time" />
+            <result property="delFlag" column="del_flag" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,coupon_id,create_time,use_state,user_id,user_name,
+        coupon_title,start_time,end_time,order_id,price,
+        condition_price,use_time,actual_discount_amount,receive_channel,share_user_id,
+        update_time,del_flag
+    </sql>
+</mapper>

@@ -7,6 +7,26 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
     <artifactId>shop-coupon-service</artifactId>
-    <name>Archetype - shop-coupon-service</name>
-    <url>http://maven.apache.org</url>
+    <name>shop-coupon-service</name>
+    <dependencies>
+        <dependency>
+            <groupId>fun.timu</groupId>
+            <artifactId>shop-common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!--MySQL驱动-->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+
+        <!--MyBatis Plus-->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+        </dependency>
+    </dependencies>
+
 </project>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fun.timu.shop.coupon.mapper.CouponMapper">
+
+    <resultMap id="BaseResultMap" type="fun.timu.shop.coupon.model.DO.CouponDO">
+            <id property="id" column="id" />
+            <result property="category" column="category" />
+            <result property="publish" column="publish" />
+            <result property="couponImg" column="coupon_img" />
+            <result property="couponTitle" column="coupon_title" />
+            <result property="price" column="price" />
+            <result property="userLimit" column="user_limit" />
+            <result property="startTime" column="start_time" />
+            <result property="endTime" column="end_time" />
+            <result property="publishCount" column="publish_count" />
+            <result property="stock" column="stock" />
+            <result property="createTime" column="create_time" />
+            <result property="conditionPrice" column="condition_price" />
+            <result property="applicableProducts" column="applicable_products" />
+            <result property="excludeProducts" column="exclude_products" />
+            <result property="minProductCount" column="min_product_count" />
+            <result property="applicableCategories" column="applicable_categories" />
+            <result property="discountType" column="discount_type" />
+            <result property="discountRate" column="discount_rate" />
+            <result property="maxDiscountAmount" column="max_discount_amount" />
+            <result property="useLimitPerOrder" column="use_limit_per_order" />
+            <result property="stackable" column="stackable" />
+            <result property="firstOrderOnly" column="first_order_only" />
+            <result property="receiveStartTime" column="receive_start_time" />
+            <result property="receiveEndTime" column="receive_end_time" />
+            <result property="dailyLimit" column="daily_limit" />
+            <result property="description" column="description" />
+            <result property="usageRules" column="usage_rules" />
+            <result property="creatorId" column="creator_id" />
+            <result property="updateTime" column="update_time" />
+            <result property="delFlag" column="del_flag" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,category,publish,coupon_img,coupon_title,price,
+        user_limit,start_time,end_time,publish_count,stock,
+        create_time,condition_price,applicable_products,exclude_products,min_product_count,
+        applicable_categories,discount_type,discount_rate,max_discount_amount,use_limit_per_order,
+        stackable,first_order_only,receive_start_time,receive_end_time,daily_limit,
+        description,usage_rules,creator_id,update_time,del_flag
+    </sql>
+</mapper>
