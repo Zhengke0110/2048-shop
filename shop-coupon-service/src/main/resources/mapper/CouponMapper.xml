@@ -55,7 +55,7 @@
         where id = #{couponId}
     </update>
 
-    <!--带库存检查的扣减库存（乐观锁）-->
+    <!--带库存检查的扣减库存（乐观锁）存在ABA问题-->
     <update id="reduceStockWithCheck">
         update coupon
         set stock = stock - 1

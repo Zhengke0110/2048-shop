@@ -37,6 +37,8 @@
         <jjwt.version>0.9.1</jjwt.version>
         <!-- <jjwt.version>0.11.5</jjwt.version> --> <!-- 新版本，无需JAXB依赖 -->
         <jaxb.version>2.3.1</jaxb.version>
+        <!-- Redisson版本 - 分布式锁和缓存 -->
+        <redisson.version>3.21.3</redisson.version>
 
         <docker.image.prefix>zhengke0110-2048-shop</docker.image.prefix>
 
@@ -149,6 +151,13 @@
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>jaxb-runtime</artifactId>
                 <version>${jaxb.version}</version>
+            </dependency>
+
+            <!--Redisson 分布式锁和缓存-->
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-boot-starter</artifactId>
+                <version>${redisson.version}</version>
             </dependency>
 
         </dependencies>

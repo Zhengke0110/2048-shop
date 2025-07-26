@@ -92,6 +92,27 @@ public class DistributedLockComponent {
     }
 
     /**
+     * 执行带锁的操作（兼容Supplier接口）
+     * 为了兼容现有的Supplier<T>接口调用
+     *
+     * @param lockKey   锁的key
+     * @param waitTime  等待时间
+     * @param leaseTime 锁持有时间
+     * @param timeUnit  时间单位
+     * @param business  业务逻辑
+     * @param <T>       返回值类型
+     * @return 操作结果
+     */
+    public <T> T executeWithLock(String lockKey, long waitTime, long leaseTime, 
+                                TimeUnit timeUnit, java.util.function.Supplier<T> business) {
+        try {
+            return executeWithLock(lockKey, () -> business.get(), leaseTime, timeUnit, DEFAULT_RETRY_TIMES, DEFAULT_RETRY_INTERVAL);
+        } catch (DistributedLock.LockException e) {
+            throw new RuntimeException("获取锁失败，请稍后重试", e);
+        }
+    }
+
+    /**
      * 生成用户地址锁的key
      *
      * @param userId 用户ID
