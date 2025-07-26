@@ -33,7 +33,10 @@
         <springdoc.openapi.version>2.2.0</springdoc.openapi.version>
         <kaptcha.version>1.1.0</kaptcha.version>
         <aliyun.oss.version>3.17.4</aliyun.oss.version>
+        <!-- JWT版本 - 可选择使用新版本解决Java 11+兼容性问题 -->
         <jjwt.version>0.9.1</jjwt.version>
+        <!-- <jjwt.version>0.11.5</jjwt.version> --> <!-- 新版本，无需JAXB依赖 -->
+        <jaxb.version>2.3.1</jaxb.version>
 
         <docker.image.prefix>zhengke0110-2048-shop</docker.image.prefix>
 
@@ -134,6 +137,18 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt</artifactId>
                 <version>${jjwt.version}</version>
+            </dependency>
+
+            <!--JAXB API for Java 11+ compatibility-->
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${jaxb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${jaxb.version}</version>
             </dependency>
 
         </dependencies>

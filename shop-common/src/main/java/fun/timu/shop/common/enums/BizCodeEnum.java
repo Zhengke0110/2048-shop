@@ -43,6 +43,17 @@ public enum BizCodeEnum {
     ADDRESS_NO_EXITS(290003, "地址不存在"),
     ADDRESS_PARAM_ERROR(290004, "地址参数错误"),
     ADDRESS_ACCESS_DENIED(290005, "无权限访问该地址"),
+    /**
+     * 优惠券
+     */
+    COUPON_CONDITION_ERROR(270001, "优惠券条件错误"),
+    COUPON_UNAVAILABLE(270002, "没有可用的优惠券"),
+    COUPON_NO_EXITS(270003, "优惠券不存在"),
+    COUPON_NO_STOCK(270005, "优惠券库存不足"),
+    COUPON_OUT_OF_LIMIT(270006, "优惠券领取超过限制次数"),
+    COUPON_OUT_OF_TIME(270407, "优惠券不在领取时间范围"),
+    COUPON_GET_FAIL(270407, "优惠券领取失败"),
+    COUPON_RECORD_LOCK_FAIL(270409, "优惠券锁定失败"),
 
     /**
      * 系统异常
