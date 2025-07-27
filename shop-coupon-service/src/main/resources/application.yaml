@@ -34,7 +34,7 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   mapper-locations: classpath:/mapper/*.xml
-  type-aliases-package: fun.timu.coupon.user.model.DO
+  type-aliases-package: fun.timu.shop.coupon.model.DO
   # 全局配置
   global-config:
     db-config:
