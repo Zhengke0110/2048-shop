@@ -34,6 +34,7 @@ import java.math.BigDecimal;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -85,6 +86,126 @@ public class CouponServiceImpl implements CouponService {
             throw new BizException(BizCodeEnum.ACCOUNT_UNLOGIN);
         }
 
+        return addCouponInternal(couponId, category, loginUser);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public JsonData grantNewUserBenefits(Long userId) {
+        // 参数校验
+        if (userId == null) {
+            throw new BizException(BizCodeEnum.COUPON_CONDITION_ERROR);
+        }
+
+        log.info("开始为新用户发放注册福利: userId={}", userId);
+
+        // 从数据库动态查询所有可用的新用户优惠券
+        List<CouponDO> availableCoupons = couponManager.getAvailableNewUserCoupons();
+
+        if (availableCoupons == null || availableCoupons.isEmpty()) {
+            log.warn("没有找到可用的新用户优惠券: userId={}", userId);
+            Map<String, Object> resultData = new HashMap<>();
+            resultData.put("userId", userId);
+            resultData.put("totalCoupons", 0);
+            resultData.put("successCount", 0);
+            resultData.put("failCount", 0);
+            resultData.put("message", "当前没有可用的新用户优惠券");
+            return JsonData.buildSuccess(resultData);
+        }
+
+        log.info("查询到{}张可用的新用户优惠券: userId={}, couponIds={}",
+                availableCoupons.size(), userId,
+                availableCoupons.stream().map(CouponDO::getId).collect(Collectors.toList()));
+
+        // 为RPC调用构建虚拟的LoginUser对象
+        LoginUser rpcUser = new LoginUser();
+        rpcUser.setId(userId);
+        rpcUser.setName("NEW-USER-" + userId);
+
+        int successCount = 0;
+        int failCount = 0;
+        StringBuilder errorDetails = new StringBuilder();
+
+        // 逐个发放优惠券
+        for (CouponDO coupon : availableCoupons) {
+            try {
+                log.info("为新用户发放优惠券: userId={}, couponId={}, couponTitle={}",
+                        userId, coupon.getId(), coupon.getCouponTitle());
+
+                JsonData result = addCouponInternal(coupon.getId(), CouponCategoryEnum.NEW_USER, rpcUser);
+
+                if (result != null && result.getCode() == 0) {
+                    successCount++;
+                    log.info("新用户优惠券发放成功: userId={}, couponId={}, couponTitle={}",
+                            userId, coupon.getId(), coupon.getCouponTitle());
+                } else {
+                    failCount++;
+                    String error = String.format("优惠券[%s]发放失败:%s; ",
+                            coupon.getCouponTitle(),
+                            result != null ? result.getMsg() : "未知错误");
+                    errorDetails.append(error);
+                    log.warn("新用户优惠券发放失败: userId={}, couponId={}, couponTitle={}, error={}",
+                            userId, coupon.getId(), coupon.getCouponTitle(), error);
+                }
+
+                // 添加短暂延迟，避免对系统造成压力
+                Thread.sleep(50);
+
+            } catch (Exception e) {
+                failCount++;
+                String error = String.format("优惠券[%s]发放异常:%s; ",
+                        coupon.getCouponTitle(), e.getMessage());
+                errorDetails.append(error);
+                log.error("新用户优惠券发放异常: userId={}, couponId={}, couponTitle={}",
+                        userId, coupon.getId(), coupon.getCouponTitle(), e);
+            }
+        }
+
+        // 构建返回结果
+        Map<String, Object> resultData = new HashMap<>();
+        resultData.put("userId", userId);
+        resultData.put("totalCoupons", availableCoupons.size());
+        resultData.put("successCount", successCount);
+        resultData.put("failCount", failCount);
+
+        // 添加成功发放的优惠券信息
+        if (successCount > 0) {
+            List<Map<String, Object>> successCoupons = availableCoupons.stream()
+                    .limit(successCount)
+                    .map(coupon -> {
+                        Map<String, Object> couponInfo = new HashMap<>();
+                        couponInfo.put("couponId", coupon.getId());
+                        couponInfo.put("couponTitle", coupon.getCouponTitle());
+                        couponInfo.put("price", coupon.getPrice());
+                        couponInfo.put("conditionPrice", coupon.getConditionPrice());
+                        return couponInfo;
+                    })
+                    .collect(Collectors.toList());
+            resultData.put("successCoupons", successCoupons);
+        }
+
+        if (errorDetails.length() > 0) {
+            resultData.put("errors", errorDetails.toString());
+        }
+
+        log.info("新用户注册福利发放完成: userId={}, 总计={}, 成功={}, 失败={}",
+                userId, availableCoupons.size(), successCount, failCount);
+
+        if (failCount == 0) {
+            return JsonData.buildSuccess(resultData);
+        } else if (successCount == 0) {
+            log.error("所有优惠券发放失败: userId={}, 总计={}, 错误详情={}", userId, availableCoupons.size(), errorDetails.toString());
+            return JsonData.buildResult(BizCodeEnum.COUPON_GET_FAIL);
+        } else {
+            // 部分成功的情况也返回成功，但包含错误信息
+            return JsonData.buildSuccess(resultData);
+        }
+    }
+
+    /**
+     * 内部方法：领取优惠券的核心逻辑
+     */
+    private JsonData addCouponInternal(long couponId, CouponCategoryEnum category, LoginUser loginUser) {
         // 分层锁机制实现
         // 第一层：用户锁，防止同一用户重复提交
         String userLockKey = "coupon:user:" + couponId + ":" + loginUser.getId();

@@ -4,7 +4,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import fun.timu.shop.coupon.model.DO.CouponDO;
-import fun.timu.shop.coupon.model.DO.CouponRecordDO;
+
+import java.util.List;
 
 public interface CouponManager extends IService<CouponDO> {
     /**
@@ -49,4 +50,11 @@ public interface CouponManager extends IService<CouponDO> {
      * @return 影响行数
      */
     int reduceStockWithLock(Long couponId);
+
+    /**
+     * 查询所有可用的新用户优惠券
+     *
+     * @return 新用户优惠券列表
+     */
+    List<CouponDO> getAvailableNewUserCoupons();
 }

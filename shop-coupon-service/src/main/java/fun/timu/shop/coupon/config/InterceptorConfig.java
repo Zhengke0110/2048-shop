@@ -20,7 +20,8 @@ public class InterceptorConfig implements WebMvcConfigurer {
 
                 // 排除不需要拦截的路径（精确匹配具体接口）
                 .excludePathPatterns(
-                        "/api/coupon/v1/coupon/pageCoupon"
+                        "/api/coupon/v1/coupon/pageCoupon",
+                        "/api/coupon/v1/coupon/rpc/new-user-benefits"  // 排除新用户福利发放RPC接口
                 );
 
         log.info("LoginInterceptor 注册成功 - 拦截所有/api/**路径，排除认证和公共接口");

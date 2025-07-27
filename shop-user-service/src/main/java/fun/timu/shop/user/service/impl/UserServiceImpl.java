@@ -1,5 +1,6 @@
 package fun.timu.shop.user.service.impl;
 
+import fun.timu.shop.common.client.CouponRpcClient;
 import fun.timu.shop.common.components.IdGeneratorComponent;
 import fun.timu.shop.common.enums.BizCodeEnum;
 import fun.timu.shop.common.enums.SendCodeEnum;
@@ -46,13 +47,15 @@ public class UserServiceImpl implements UserService {
     private final UserManager userManager;
     private final RefreshTokenManager refreshTokenManager;
     private final IdGeneratorComponent idGeneratorComponent;
+    private final CouponRpcClient couponRpcClient;
 
-    public UserServiceImpl(FileService fileService, NotifyService notifyService, UserManager userManager, StringRedisTemplate redisTemplate, RefreshTokenManager refreshTokenManager, IdGeneratorComponent idGeneratorComponent) {
+    public UserServiceImpl(FileService fileService, NotifyService notifyService, UserManager userManager, StringRedisTemplate redisTemplate, RefreshTokenManager refreshTokenManager, IdGeneratorComponent idGeneratorComponent, CouponRpcClient couponRpcClient) {
         this.fileService = fileService;
         this.notifyService = notifyService;
         this.userManager = userManager;
         this.refreshTokenManager = refreshTokenManager;
         this.idGeneratorComponent = idGeneratorComponent;
+        this.couponRpcClient = couponRpcClient;
     }
 
     /**
@@ -252,12 +255,38 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 用户注册，初始化福利信息 TODO
+     * 用户注册，初始化福利信息
+     * 为新用户发放注册福利优惠券
      *
-     * @param userDO
+     * @param userDO 新注册的用户信息
      */
     private void userRegisterInitTask(UserDO userDO) {
-
+        try {
+            log.info("开始为新用户发放福利: userId={}, email={}", userDO.getId(), userDO.getMail());
+            
+            // 调用优惠券服务的新用户福利发放接口
+            // 具体发放什么优惠券由优惠券服务决定，用户服务只负责触发
+            JsonData result = couponRpcClient.grantNewUserBenefits(userDO.getId());
+            
+            if (result != null && result.getCode() == 0) {
+                log.info("新用户福利发放成功: userId={}, result={}", userDO.getId(), result.getData());
+                
+                // 可以在这里添加其他初始化任务，比如：
+                // - 发送欢迎邮件
+                // - 初始化用户积分
+                // - 记录用户注册来源
+                // - 添加到用户成长体系等
+                
+            } else {
+                log.warn("新用户福利发放失败: userId={}, error={}", 
+                        userDO.getId(), result != null ? result.getMsg() : "未知错误");
+            }
+            
+        } catch (Exception e) {
+            log.error("新用户初始化任务执行失败: userId={}", userDO.getId(), e);
+            // 注意：这里不应该抛出异常，避免影响用户注册流程
+            // 福利发放失败不应该导致注册失败
+        }
     }
 
 }

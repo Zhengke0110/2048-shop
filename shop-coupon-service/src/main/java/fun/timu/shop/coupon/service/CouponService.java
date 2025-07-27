@@ -33,6 +33,15 @@ public interface CouponService {
     JsonData addCoupon(long couponId, CouponCategoryEnum category);
 
     /**
+     * 新用户注册福利发放
+     * 为新注册用户发放所有配置的新用户福利优惠券
+     *
+     * @param userId 用户ID
+     * @return 发放结果
+     */
+    JsonData grantNewUserBenefits(Long userId);
+
+    /**
      * 获取用户优惠券记录
      *
      * @param useState 使用状态
