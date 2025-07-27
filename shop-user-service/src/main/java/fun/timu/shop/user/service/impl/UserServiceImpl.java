@@ -1,6 +1,6 @@
 package fun.timu.shop.user.service.impl;
 
-import fun.timu.shop.common.client.CouponRpcClient;
+import fun.timu.shop.user.client.CouponRpcClient;
 import fun.timu.shop.common.components.IdGeneratorComponent;
 import fun.timu.shop.common.enums.BizCodeEnum;
 import fun.timu.shop.common.enums.SendCodeEnum;

@@ -23,6 +23,16 @@ public interface ProductManager {
     ProductDO getByIdNotDeleted(Long id);
 
     /**
+     * 根据ID获取商品（包含已删除的）
+     */
+    ProductDO selectById(Long id);
+
+    /**
+     * 根据ID列表批量获取商品
+     */
+    List<ProductDO> listByIds(List<Long> ids);
+
+    /**
      * 保存商品
      */
     boolean save(ProductDO productDO);

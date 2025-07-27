@@ -73,4 +73,16 @@ public interface ProductService {
      * 释放锁定库存
      */
     JsonData releaseLockStock(Long id, Integer quantity);
+
+    // ==================== RPC 相关方法 ====================
+
+    /**
+     * 批量获取商品详情（RPC接口用）
+     */
+    JsonData getBatchProductDetails(List<Long> productIds);
+
+    /**
+     * 验证商品库存（RPC接口用）
+     */
+    JsonData validateStock(Long productId, Integer quantity);
 }

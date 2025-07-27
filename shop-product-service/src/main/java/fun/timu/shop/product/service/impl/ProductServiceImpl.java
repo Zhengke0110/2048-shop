@@ -19,7 +19,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author zhengke
@@ -422,8 +424,99 @@ public class ProductServiceImpl implements ProductService {
 
         return false;
     }
+
+    // ==================== RPC 相关方法实现 ====================
+
+    @Override
+    public JsonData getBatchProductDetails(List<Long> productIds) {
+        try {
+            if (productIds == null || productIds.isEmpty()) {
+                return JsonData.buildError("商品ID列表不能为空");
+            }
+
+            log.info("批量获取商品详情: productIds={}", productIds);
+
+            List<ProductDO> productDOList = productManager.listByIds(productIds);
+            
+            if (productDOList.isEmpty()) {
+                log.warn("未找到任何商品: productIds={}", productIds);
+                return JsonData.buildSuccess(List.of());
+            }
+
+            // 转换为VO对象，这里返回Map格式方便购物车服务使用
+            Map<String, Object> productMap = new HashMap<>();
+            for (ProductDO productDO : productDOList) {
+                Map<String, Object> productInfo = new HashMap<>();
+                productInfo.put("id", productDO.getId());
+                productInfo.put("title", productDO.getTitle());
+                productInfo.put("coverImg", productDO.getCoverImg());
+                productInfo.put("price", productDO.getPrice());
+                productInfo.put("stock", productDO.getStock());
+                productInfo.put("status", productDO.getStatus());
+                
+                productMap.put(productDO.getId().toString(), productInfo);
+            }
+
+            log.info("批量获取商品详情成功: count={}", productDOList.size());
+            return JsonData.buildSuccess(productMap);
+
+        } catch (Exception e) {
+            log.error("批量获取商品详情失败: productIds={}", productIds, e);
+            return JsonData.buildError("批量获取商品详情失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public JsonData validateStock(Long productId, Integer quantity) {
+        try {
+            if (productId == null) {
+                return JsonData.buildError("商品ID不能为空");
+            }
+
+            if (quantity == null || quantity <= 0) {
+                return JsonData.buildError("验证数量必须大于0");
+            }
+
+            log.info("验证商品库存: productId={}, quantity={}", productId, quantity);
+
+            ProductDO productDO = productManager.selectById(productId);
+            if (productDO == null) {
+                log.warn("商品不存在: productId={}", productId);
+                return JsonData.buildError("商品不存在");
+            }
+
+            // 检查商品状态
+            if (!ProductStatusEnum.ONLINE.getCode().equals(productDO.getStatus())) {
+                log.warn("商品已下架: productId={}, status={}", productId, productDO.getStatus());
+                return JsonData.buildError("商品已下架");
+            }
+
+            // 检查是否已删除
+            if (DelFlagEnum.DELETED.getCode() == productDO.getDelFlag()) {
+                log.warn("商品已删除: productId={}", productId);
+                return JsonData.buildError("商品已删除");
+            }
+
+            // 检查库存是否充足
+            Integer availableStock = productDO.getStock() - (productDO.getLockStock() != null ? productDO.getLockStock() : 0);
+            if (availableStock < quantity) {
+                log.warn("库存不足: productId={}, 需要数量={}, 可用库存={}", productId, quantity, availableStock);
+                return JsonData.buildError("库存不足，当前可用库存：" + availableStock);
+            }
+
+            log.info("库存验证通过: productId={}, quantity={}, availableStock={}", productId, quantity, availableStock);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("productId", productId);
+            result.put("requestQuantity", quantity);
+            result.put("availableStock", availableStock);
+            result.put("valid", true);
+            
+            return JsonData.buildSuccess(result);
+
+        } catch (Exception e) {
+            log.error("验证商品库存失败: productId={}, quantity={}", productId, quantity, e);
+            return JsonData.buildError("验证库存失败: " + e.getMessage());
+        }
+    }
 }
-
-
-
-

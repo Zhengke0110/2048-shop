@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fun.timu.shop.order.mapper.CartMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="fun.timu.shop.order.model.DO.CartDO">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="product_id" property="productId" jdbcType="BIGINT"/>
+        <result column="quantity" property="quantity" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, product_id, quantity, create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID获取购物车列表 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM cart
+        WHERE user_id = #{userId}
+        ORDER BY update_time DESC
+    </select>
+
+    <!-- 根据用户ID和商品ID获取购物车项 -->
+    <select id="selectByUserIdAndProductId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM cart
+        WHERE user_id = #{userId} AND product_id = #{productId}
+        LIMIT 1
+    </select>
+
+    <!-- 插入或更新购物车项 -->
+    <insert id="insertOrUpdate">
+        INSERT INTO cart (user_id, product_id, quantity, create_time, update_time)
+        VALUES (#{userId}, #{productId}, #{quantity}, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            quantity = VALUES(quantity),
+            update_time = NOW()
+    </insert>
+
+    <!-- 批量删除购物车项 -->
+    <delete id="deleteBatchByUserIdAndProductIds">
+        DELETE FROM cart
+        WHERE user_id = #{userId}
+        AND product_id IN
+        <foreach collection="productIds" item="productId" open="(" separator="," close=")">
+            #{productId}
+        </foreach>
+    </delete>
+
+    <!-- 根据用户ID删除所有购物车项 -->
+    <delete id="deleteByUserId">
+        DELETE FROM cart WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 获取热点用户的购物车数据 -->
+    <select id="selectHotUserCartData" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM cart
+        WHERE update_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        ORDER BY update_time DESC
+    </select>
+
+    <!-- 获取所有购物车数据（分页） -->
+    <select id="selectAllCartData" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM cart
+        ORDER BY update_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 获取购物车数据总数 -->
+    <select id="countAllCartData" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM cart
+    </select>
+
+</mapper>

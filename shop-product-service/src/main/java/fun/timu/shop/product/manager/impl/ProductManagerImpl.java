@@ -103,6 +103,22 @@ public class ProductManagerImpl implements ProductManager {
     }
 
     @Override
+    public ProductDO selectById(Long id) {
+        return productMapper.selectById(id);
+    }
+
+    @Override
+    public List<ProductDO> listByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        LambdaQueryWrapper<ProductDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(ProductDO::getId, ids)
+                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getCode());
+        return productMapper.selectList(wrapper);
+    }
+
+    @Override
     public boolean save(ProductDO productDO) {
         return productMapper.insert(productDO) > 0;
     }

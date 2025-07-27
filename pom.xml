@@ -39,6 +39,8 @@
         <jaxb.version>2.3.1</jaxb.version>
         <!-- Redisson版本 - 分布式锁和缓存 -->
         <redisson.version>3.21.3</redisson.version>
+        <!-- FastJSON2版本 - JSON处理 -->
+        <fastjson2.version>2.0.43</fastjson2.version>
 
         <docker.image.prefix>zhengke0110-2048-shop</docker.image.prefix>
 
@@ -160,6 +162,13 @@
                 <version>${redisson.version}</version>
             </dependency>
 
+            <!--FastJSON2 JSON处理-->
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson2.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -198,6 +207,12 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
+        <!-- FastJSON2 -->
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
         </dependency>
     </dependencies>
 </project>

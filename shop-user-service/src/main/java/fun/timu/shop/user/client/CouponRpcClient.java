@@ -1,7 +1,8 @@
-package fun.timu.shop.common.client;
+package fun.timu.shop.user.client;
 
 import fun.timu.shop.common.components.HttpRpcClient;
 import fun.timu.shop.common.util.JsonData;
+import fun.timu.shop.common.util.RpcSecurityUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -41,12 +42,11 @@ public class CouponRpcClient {
         Map<String, Object> request = new HashMap<>();
         request.put("userId", userId);
         
-        // 添加RPC标识头
-        Map<String, String> headers = new HashMap<>();
-        headers.put("RPC-Source", "user-service");
+        // 生成安全的RPC头部
+        Map<String, String> headers = RpcSecurityUtil.generateSecurityHeaders("user-service", "POST", "/api/coupon/v1/coupon/rpc/new-user-benefits");
         headers.put("Content-Type", "application/json");
         
-        log.info("发送RPC请求 - 新用户注册福利发放: userId={}", userId);
+        log.info("发送安全RPC请求 - 新用户注册福利发放: userId={}", userId);
         
         JsonData result = httpRpcClient.postWithHeaders(url, request, headers);
         
