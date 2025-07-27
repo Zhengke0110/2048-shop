@@ -1,4 +1,4 @@
-package fun.timu.shop.coupon.model.request;
+package fun.timu.shop.coupon.controller.request;
 
 import lombok.Data;
 

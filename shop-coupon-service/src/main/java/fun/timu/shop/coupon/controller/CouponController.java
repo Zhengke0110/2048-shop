@@ -3,7 +3,7 @@ package fun.timu.shop.coupon.controller;
 import fun.timu.shop.common.enums.CouponCategoryEnum;
 import fun.timu.shop.common.enums.CouponStateEnum;
 import fun.timu.shop.common.util.JsonData;
-import fun.timu.shop.coupon.model.request.UseCouponRequest;
+import fun.timu.shop.coupon.controller.request.UseCouponRequest;
 import fun.timu.shop.coupon.service.CouponService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
