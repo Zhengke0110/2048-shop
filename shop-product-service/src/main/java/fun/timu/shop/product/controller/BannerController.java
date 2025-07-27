@@ -82,8 +82,7 @@ public class BannerController {
     }
 
     /**
-     * 根据ID获取轮播图详情
-     * 仅用于点击统计
+     * 根据ID获取轮播图详情（仅用于点击统计）
      *
      * @param id
      * @return

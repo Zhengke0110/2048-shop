@@ -27,4 +27,41 @@
         price,stock,lock_stock,sales_count,sort,
         status,create_time,update_time,del_flag
     </sql>
+
+    <!-- 扣减库存 -->
+    <update id="decreaseStock">
+        UPDATE product
+        SET stock = stock - #{quantity}
+        WHERE id = #{id}
+          AND stock >= #{quantity}
+          AND del_flag = 0
+    </update>
+
+    <!-- 增加库存 -->
+    <update id="increaseStock">
+        UPDATE product
+        SET stock = stock + #{quantity}
+        WHERE id = #{id}
+          AND del_flag = 0
+    </update>
+
+    <!-- 锁定库存 -->
+    <update id="lockStock">
+        UPDATE product
+        SET stock = stock - #{quantity},
+            lock_stock = lock_stock + #{quantity}
+        WHERE id = #{id}
+          AND stock >= #{quantity}
+          AND del_flag = 0
+    </update>
+
+    <!-- 释放锁定库存 -->
+    <update id="releaseLockStock">
+        UPDATE product
+        SET stock = stock + #{quantity},
+            lock_stock = lock_stock - #{quantity}
+        WHERE id = #{id}
+          AND lock_stock >= #{quantity}
+          AND del_flag = 0
+    </update>
 </mapper>

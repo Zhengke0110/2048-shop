@@ -24,10 +24,19 @@ public class InterceptorConfig implements WebMvcConfigurer {
                         "/api/product/v1/banner/list",
                         "/api/product/v1/banner/list/**",
                         "/api/product/v1/banner/home",
-                        "/api/product/v1/banner/*"
+                        "/api/product/v1/banner/*",
+                        
+                        // 商品查询接口 - 普通用户可以访问
+                        "/api/product/v1/product/list",
+                        "/api/product/v1/product/list/**",
+                        "/api/product/v1/product/hot",
+                        "/api/product/v1/product/recommend",
+                        "/api/product/v1/product/search",
+                        "/api/product/v1/product/price-range",
+                        "/api/product/v1/product/*"
                 );
 
-        log.info("LoginInterceptor 注册成功 - 拦截所有/api/**路径，排除轮播图查询等公共接口");
+        log.info("LoginInterceptor 注册成功 - 拦截所有/api/**路径，排除轮播图、商品查询等公共接口");
     }
 }
 
