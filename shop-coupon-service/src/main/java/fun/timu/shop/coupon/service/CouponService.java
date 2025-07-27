@@ -2,9 +2,6 @@ package fun.timu.shop.coupon.service;
 
 import fun.timu.shop.common.enums.CouponCategoryEnum;
 import fun.timu.shop.common.util.JsonData;
-import fun.timu.shop.coupon.model.DO.CouponDO;
-import com.baomidou.mybatisplus.extension.service.IService;
-
 import java.math.BigDecimal;
 import java.util.Map;
 

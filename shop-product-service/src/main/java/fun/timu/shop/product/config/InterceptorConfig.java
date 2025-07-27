@@ -19,9 +19,15 @@ public class InterceptorConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/**")
 
                 // 排除不需要拦截的路径（精确匹配具体接口）
-                .excludePathPatterns();
+                .excludePathPatterns(
+                        // 轮播图查询接口 - 普通用户可以访问
+                        "/api/product/v1/banner/list",
+                        "/api/product/v1/banner/list/**",
+                        "/api/product/v1/banner/home",
+                        "/api/product/v1/banner/*"
+                );
 
-        log.info("LoginInterceptor 注册成功 - 拦截所有/api/**路径，排除认证和公共接口");
+        log.info("LoginInterceptor 注册成功 - 拦截所有/api/**路径，排除轮播图查询等公共接口");
     }
 }
 
