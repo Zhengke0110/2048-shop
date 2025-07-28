@@ -207,7 +207,7 @@ public class CouponServiceImpl implements CouponService {
      * 内部方法：领取优惠券的核心逻辑
      */
     @Transactional(rollbackFor = Exception.class)
-    private JsonData addCouponInternal(long couponId, CouponCategoryEnum category, LoginUser loginUser) {
+    protected JsonData addCouponInternal(long couponId, CouponCategoryEnum category, LoginUser loginUser) {
         // 使用组合锁key，锁定用户和优惠券
         String combinedLockKey = String.format("coupon:combined:%d:%d", couponId, loginUser.getId());
 

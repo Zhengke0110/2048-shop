@@ -7,6 +7,25 @@ spring:
   #激活开发环境配置
   profiles:
     active: dev
+
+  # Nacos 配置导入
+  config:
+    import:
+      - optional:nacos:shop-coupon-service.yaml
+      - optional:nacos:common-config.yaml
+
+  # Nacos 配置
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848 # Nacos服务器地址
+        namespace: a734a22d-e648-44ce-9208-00d3be552318
+        group: DEFAULT_GROUP # 服务分组
+      config:
+        server-addr: localhost:8848 # Nacos配置中心地址
+        file-extension: yaml # 配置文件格式
+        namespace: a734a22d-e648-44ce-9208-00d3be552318
+        group: DEFAULT_GROUP # 配置分组
   #数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -48,3 +67,11 @@ mybatis-plus:
 logging:
   level:
     root: INFO
+
+# 应用配置
+app:
+  # Snowflake ID生成器配置
+  snowflake:
+    # 机器ID (0-1023)，不同的服务实例需要配置不同的机器ID
+    # 如果不配置，将自动根据IP地址生成
+    machine-id: 2
