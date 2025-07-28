@@ -2,7 +2,6 @@ package fun.timu.shop.coupon.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import fun.timu.shop.common.enums.BizCodeEnum;
 import fun.timu.shop.common.enums.CouponCategoryEnum;
 import fun.timu.shop.common.enums.CouponPublishEnum;
@@ -10,7 +9,6 @@ import fun.timu.shop.common.enums.CouponStateEnum;
 import fun.timu.shop.common.exception.BizException;
 import fun.timu.shop.common.interceptor.LoginInterceptor;
 import fun.timu.shop.common.model.LoginUser;
-import fun.timu.shop.common.util.CommonUtil;
 import fun.timu.shop.common.util.JsonData;
 import fun.timu.shop.coupon.manager.CouponManager;
 import fun.timu.shop.coupon.manager.CouponRecordManager;
@@ -19,7 +17,6 @@ import fun.timu.shop.coupon.model.DO.CouponRecordDO;
 import fun.timu.shop.coupon.model.VO.CouponRecordVO;
 import fun.timu.shop.coupon.model.VO.CouponVO;
 import fun.timu.shop.coupon.service.CouponService;
-import fun.timu.shop.coupon.mapper.CouponMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -90,7 +87,6 @@ public class CouponServiceImpl implements CouponService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public JsonData grantNewUserBenefits(Long userId) {
         // 参数校验
         if (userId == null) {
@@ -132,7 +128,15 @@ public class CouponServiceImpl implements CouponService {
                 log.info("为新用户发放优惠券: userId={}, couponId={}, couponTitle={}",
                         userId, coupon.getId(), coupon.getCouponTitle());
 
-                JsonData result = addCouponInternal(coupon.getId(), CouponCategoryEnum.NEW_USER, rpcUser);
+                // 预检查：如果用户已经领取过，跳过
+                Long existingCount = couponRecordManager.selectCount(coupon.getId(), userId);
+                if (existingCount > 0) {
+                    log.info("用户已经领取过该优惠券，跳过: userId={}, couponId={}", userId, coupon.getId());
+                    successCount++;
+                    continue;
+                }
+
+                JsonData result = addCouponInternalWithRetry(coupon.getId(), CouponCategoryEnum.NEW_USER, rpcUser);
 
                 if (result != null && result.getCode() == 0) {
                     successCount++;
@@ -147,9 +151,6 @@ public class CouponServiceImpl implements CouponService {
                     log.warn("新用户优惠券发放失败: userId={}, couponId={}, couponTitle={}, error={}",
                             userId, coupon.getId(), coupon.getCouponTitle(), error);
                 }
-
-                // 添加短暂延迟，避免对系统造成压力
-                Thread.sleep(50);
 
             } catch (Exception e) {
                 failCount++;
@@ -205,44 +206,36 @@ public class CouponServiceImpl implements CouponService {
     /**
      * 内部方法：领取优惠券的核心逻辑
      */
+    @Transactional(rollbackFor = Exception.class)
     private JsonData addCouponInternal(long couponId, CouponCategoryEnum category, LoginUser loginUser) {
-        // 分层锁机制实现
-        // 第一层：用户锁，防止同一用户重复提交
-        String userLockKey = "coupon:user:" + couponId + ":" + loginUser.getId();
+        // 使用组合锁key，锁定用户和优惠券
+        String combinedLockKey = String.format("coupon:combined:%d:%d", couponId, loginUser.getId());
 
         try {
-            return distributedLockComponent.executeWithLock(userLockKey, 1,    // 等待时间1秒（快速失败）
-                    30,   // 锁持有时间30秒
-                    TimeUnit.SECONDS, () -> {
+            return distributedLockComponent.executeWithLock(combinedLockKey, 2, 6, TimeUnit.SECONDS, () -> {
                         // 1. 检查用户是否已领取过该优惠券
                         Long recordCount = couponRecordManager.selectCount(couponId, loginUser.getId());
                         if (recordCount > 0) {
                             throw new BizException(BizCodeEnum.COUPON_OUT_OF_LIMIT);
                         }
 
-                        // 第二层：库存锁，防止库存超卖
-                        String stockLockKey = "coupon:stock:" + couponId;
-                        return distributedLockComponent.executeWithLock(stockLockKey, 2,    // 等待时间2秒
-                                10,   // 锁持有时间10秒（短暂持有）
-                                TimeUnit.SECONDS, () -> {
-                                    // 2. 获取优惠券信息并进行校验
-                                    CouponDO couponDO = couponManager.selectOne(couponId, category.name());
-                                    checkCoupon(couponDO, loginUser.getId());
+                        // 2. 获取优惠券信息并进行校验
+                        CouponDO couponDO = couponManager.selectOne(couponId, category.name());
+                        checkCoupon(couponDO, loginUser.getId());
 
-                                    // 3. 扣减库存（使用数据库悲观锁）
-                                    int rows = couponManager.reduceStockWithLock(couponId);
-                                    if (rows <= 0) {
-                                        log.warn("优惠券库存不足，发放失败. couponId:{}, userId:{}", couponId, loginUser.getId());
-                                        throw new BizException(BizCodeEnum.COUPON_NO_STOCK);
-                                    }
+                        // 3. 扣减库存（使用数据库悲观锁）
+                        int rows = couponManager.reduceStockWithLock(couponId);
+                        if (rows <= 0) {
+                            log.warn("优惠券库存不足，发放失败. couponId:{}, userId:{}", couponId, loginUser.getId());
+                            throw new BizException(BizCodeEnum.COUPON_NO_STOCK);
+                        }
 
-                                    // 4. 构建并保存领券记录
-                                    CouponRecordDO couponRecordDO = buildCouponRecord(couponDO, loginUser);
-                                    couponRecordManager.insert(couponRecordDO);
+                        // 4. 构建并保存领券记录
+                        CouponRecordDO couponRecordDO = buildCouponRecord(couponDO, loginUser);
+                        couponRecordManager.insert(couponRecordDO);
 
-                                    log.info("用户领取优惠券成功. couponId:{}, userId:{}", couponId, loginUser.getId());
-                                    return JsonData.buildSuccess();
-                                });
+                        log.info("用户领取优惠券成功. couponId:{}, userId:{}", couponId, loginUser.getId());
+                        return JsonData.buildSuccess();
                     });
         } catch (Exception e) {
             log.error("领取优惠券异常. couponId:{}, userId:{}", couponId, loginUser.getId(), e);
@@ -438,8 +431,26 @@ public class CouponServiceImpl implements CouponService {
         BeanUtils.copyProperties(couponDO, couponVO);
         return couponVO;
     }
+
+    /**
+     * 新用户优惠券发放方法
+     */
+    private JsonData addCouponInternalWithRetry(long couponId, CouponCategoryEnum category, LoginUser loginUser) {
+        try {
+            return addCouponInternal(couponId, category, loginUser);
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("获取锁失败")) {
+                log.warn("新用户优惠券发放锁竞争失败: userId={}, couponId={}, error={}", 
+                         loginUser.getId(), couponId, e.getMessage());
+                
+                String combinedLockKey = String.format("coupon:combined:%d:%d", couponId, loginUser.getId());
+                String lockStatus = distributedLockComponent.checkLockStatus(combinedLockKey);
+                log.warn("锁竞争失败时的锁状态: {}", lockStatus);
+                
+                return JsonData.buildError("优惠券发放失败，系统繁忙");
+            } else {
+                throw e;
+            }
+        }
+    }
 }
-
-
-
-

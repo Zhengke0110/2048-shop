@@ -31,7 +31,7 @@ public class DistributedLockComponent {
     /**
      * 默认重试间隔（毫秒）
      */
-    private static final long DEFAULT_RETRY_INTERVAL = 100;
+    private static final long DEFAULT_RETRY_INTERVAL = 30;
 
     public DistributedLockComponent(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -106,8 +106,10 @@ public class DistributedLockComponent {
     public <T> T executeWithLock(String lockKey, long waitTime, long leaseTime, 
                                 TimeUnit timeUnit, java.util.function.Supplier<T> business) {
         try {
-            return executeWithLock(lockKey, () -> business.get(), leaseTime, timeUnit, DEFAULT_RETRY_TIMES, DEFAULT_RETRY_INTERVAL);
+            DistributedLock lock = createLock(lockKey, leaseTime, timeUnit);
+            return lock.executeWithLock(() -> business.get(), waitTime, DEFAULT_RETRY_INTERVAL, timeUnit);
         } catch (DistributedLock.LockException e) {
+            log.warn("获取分布式锁失败: lockKey={}, waitTime={}, leaseTime={}", lockKey, waitTime, leaseTime, e);
             throw new RuntimeException("获取锁失败，请稍后重试", e);
         }
     }
@@ -130,5 +132,74 @@ public class DistributedLockComponent {
      */
     public String generateDefaultAddressLockKey(Long userId) {
         return "lock:user:default_address:" + userId;
+    }
+
+    /**
+     * 生成优惠券用户锁的key
+     *
+     * @param couponId 优惠券ID
+     * @param userId   用户ID
+     * @return 锁的key
+     */
+    public String generateCouponUserLockKey(Long couponId, Long userId) {
+        return "coupon:user:" + couponId + ":" + userId;
+    }
+
+    /**
+     * 生成优惠券库存锁的key
+     *
+     * @param couponId 优惠券ID
+     * @return 锁的key
+     */
+    public String generateCouponStockLockKey(Long couponId) {
+        return "coupon:stock:" + couponId;
+    }
+
+    /**
+     * 生成优惠券组合锁的key（同时锁定用户和优惠券）
+     *
+     * @param couponId 优惠券ID
+     * @param userId   用户ID
+     * @return 锁的key
+     */
+    public String generateCouponCombinedLockKey(Long couponId, Long userId) {
+        return "coupon:combined:" + couponId + ":" + userId;
+    }
+
+    /**
+     * 检查锁状态（用于监控和调试）
+     *
+     * @param lockKey 锁的key
+     * @return 锁状态信息
+     */
+    public String checkLockStatus(String lockKey) {
+        try {
+            DistributedLock lock = createLock(lockKey);
+            boolean isLocked = lock.isLocked();
+            long ttl = lock.getLockTtl();
+            String holder = lock.getLockHolder();
+            
+            return String.format("锁状态[%s]: 是否存在=%s, 剩余时间=%ds, 持有者=%s", 
+                               lockKey, isLocked, ttl, holder != null ? holder.substring(0, Math.min(8, holder.length())) + "..." : "null");
+        } catch (Exception e) {
+            return String.format("锁状态检查异常[%s]: %s", lockKey, e.getMessage());
+        }
+    }
+
+    /**
+     * 强制释放锁（谨慎使用，仅在确认锁泄露时使用）
+     *
+     * @param lockKey 锁的key
+     * @return 是否成功释放
+     */
+    public boolean forceUnlock(String lockKey) {
+        try {
+            Boolean result = redisTemplate.delete(lockKey);
+            log.warn("强制释放锁: key={}, result={}", lockKey, result);
+            return Boolean.TRUE.equals(result);
+        } catch (Exception e) {
+            log.error("强制释放锁异常: key={}", lockKey, e);
+            return false;
+        }
     }
 }

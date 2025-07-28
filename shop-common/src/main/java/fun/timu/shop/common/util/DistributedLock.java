@@ -59,14 +59,16 @@ public class DistributedLock {
             boolean lockResult = Boolean.TRUE.equals(result);
 
             if (lockResult) {
-                log.debug("获取分布式锁成功: key={}, value={}", lockKey, lockValue);
+                log.debug("获取分布式锁成功: key={}, value={}, expireTime={}{}", 
+                         lockKey, lockValue, expireTime, timeUnit.name().toLowerCase());
             } else {
-                log.debug("获取分布式锁失败: key={}", lockKey);
+                log.debug("获取分布式锁失败，锁已被占用: key={}", lockKey);
             }
 
             return lockResult;
         } catch (Exception e) {
-            log.error("获取分布式锁异常: key={}", lockKey, e);
+            log.error("获取分布式锁异常: key={}, 可能是Redis连接问题", lockKey, e);
+            // Redis异常时不要无限重试，直接返回false
             return false;
         }
     }
@@ -100,6 +102,49 @@ public class DistributedLock {
     }
 
     /**
+     * 尝试获取锁，带超时和重试
+     * 优化版本：使用指数退避算法减少重试压力
+     *
+     * @param waitTime      等待时间
+     * @param retryInterval 重试间隔（毫秒）
+     * @param timeUnit      时间单位
+     * @return true-获取成功，false-获取失败
+     */
+    public boolean tryLock(long waitTime, long retryInterval, TimeUnit timeUnit) {
+        long waitTimeMs = timeUnit.toMillis(waitTime);
+        long endTime = System.currentTimeMillis() + waitTimeMs;
+        int attempts = 0;
+        long currentInterval = retryInterval;
+        
+        log.debug("开始尝试获取分布式锁: key={}, waitTime={}ms, retryInterval={}ms", 
+                 lockKey, waitTimeMs, retryInterval);
+        
+        while (System.currentTimeMillis() < endTime) {
+            attempts++;
+            if (tryLock()) {
+                log.debug("获取分布式锁成功: key={}, attempts={}", lockKey, attempts);
+                return true;
+            }
+            
+            // 指数退避算法：随着重试次数增加，延迟时间增加
+            if (attempts > 20) {
+                currentInterval = Math.min(retryInterval * 2, 200); // 最大200ms
+            }
+            
+            try {
+                Thread.sleep(currentInterval);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("获取分布式锁重试被中断: key={}, attempts={}", lockKey, attempts);
+                return false;
+            }
+        }
+        
+        log.warn("获取分布式锁超时失败: key={}, waitTime={}ms, attempts={}", lockKey, waitTimeMs, attempts);
+        return false;
+    }
+
+    /**
      * 释放锁
      *
      * @return true-释放成功，false-释放失败
@@ -116,12 +161,12 @@ public class DistributedLock {
             if (unlockResult) {
                 log.debug("释放分布式锁成功: key={}, value={}", lockKey, lockValue);
             } else {
-                log.warn("释放分布式锁失败，锁可能已过期或被其他线程释放: key={}", lockKey);
+                log.warn("释放分布式锁失败，锁可能已过期或被其他线程释放: key={}, value={}", lockKey, lockValue);
             }
 
             return unlockResult;
         } catch (Exception e) {
-            log.error("释放分布式锁异常: key={}", lockKey, e);
+            log.error("释放分布式锁异常: key={}, value={}", lockKey, lockValue, e);
             return false;
         }
     }
@@ -171,6 +216,41 @@ public class DistributedLock {
     }
 
     /**
+     * 执行带锁的操作（带等待时间）
+     *
+     * @param action        要执行的操作
+     * @param waitTime      等待时间
+     * @param retryInterval 重试间隔（毫秒）
+     * @param timeUnit      时间单位
+     * @param <T>           返回值类型
+     * @return 操作结果
+     * @throws LockException 获取锁失败异常
+     */
+    public <T> T executeWithLock(LockAction<T> action, long waitTime, long retryInterval, TimeUnit timeUnit) throws LockException {
+        long startTime = System.currentTimeMillis();
+        
+        if (!tryLock(waitTime, retryInterval, timeUnit)) {
+            long duration = System.currentTimeMillis() - startTime;
+            log.warn("获取分布式锁失败: key={}, waitTime={}ms, actualWaitTime={}ms", 
+                    lockKey, timeUnit.toMillis(waitTime), duration);
+            throw new LockException("获取分布式锁失败: " + lockKey);
+        }
+
+        long lockAcquiredTime = System.currentTimeMillis();
+        log.debug("获取分布式锁耗时: key={}, duration={}ms", lockKey, lockAcquiredTime - startTime);
+
+        try {
+            return action.execute();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            long businessDuration = System.currentTimeMillis() - lockAcquiredTime;
+            unlock();
+            log.debug("分布式锁业务执行耗时: key={}, duration={}ms", lockKey, businessDuration);
+        }
+    }
+
+    /**
      * 锁操作接口
      *
      * @param <T> 返回值类型
@@ -190,6 +270,64 @@ public class DistributedLock {
 
         public LockException(String message, Throwable cause) {
             super(message, cause);
+        }
+    }
+
+    /**
+     * 检查锁是否存在
+     *
+     * @return true-锁存在，false-锁不存在
+     */
+    public boolean isLocked() {
+        try {
+            String value = redisTemplate.opsForValue().get(lockKey);
+            return value != null;
+        } catch (Exception e) {
+            log.error("检查锁状态异常: key={}", lockKey, e);
+            return false;
+        }
+    }
+
+    /**
+     * 检查当前锁的持有者
+     *
+     * @return 锁的值，如果锁不存在返回null
+     */
+    public String getLockHolder() {
+        try {
+            return redisTemplate.opsForValue().get(lockKey);
+        } catch (Exception e) {
+            log.error("获取锁持有者异常: key={}", lockKey, e);
+            return null;
+        }
+    }
+
+    /**
+     * 检查当前线程是否持有锁
+     *
+     * @return true-当前线程持有锁，false-不持有
+     */
+    public boolean isLockedByCurrentThread() {
+        try {
+            String currentHolder = redisTemplate.opsForValue().get(lockKey);
+            return lockValue.equals(currentHolder);
+        } catch (Exception e) {
+            log.error("检查锁持有状态异常: key={}", lockKey, e);
+            return false;
+        }
+    }
+
+    /**
+     * 获取锁的剩余过期时间
+     *
+     * @return 剩余过期时间（秒），-1表示永不过期，-2表示锁不存在
+     */
+    public long getLockTtl() {
+        try {
+            return redisTemplate.getExpire(lockKey, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("获取锁TTL异常: key={}", lockKey, e);
+            return -2;
         }
     }
 }
