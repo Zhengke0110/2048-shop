@@ -41,6 +41,8 @@
         <redisson.version>3.21.3</redisson.version>
         <!-- FastJSON2版本 - JSON处理 -->
         <fastjson2.version>2.0.43</fastjson2.version>
+        <!-- RabbitMQ版本 - 消息队列 -->
+        <rabbitmq.version>3.1.12</rabbitmq.version>
 
         <docker.image.prefix>zhengke0110-2048-shop</docker.image.prefix>
 
@@ -167,6 +169,13 @@
                 <groupId>com.alibaba.fastjson2</groupId>
                 <artifactId>fastjson2</artifactId>
                 <version>${fastjson2.version}</version>
+            </dependency>
+
+            <!--RabbitMQ 消息队列-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-amqp</artifactId>
+                <version>${rabbitmq.version}</version>
             </dependency>
 
         </dependencies>

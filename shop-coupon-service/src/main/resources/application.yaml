@@ -48,6 +48,26 @@ spring:
           max-wait: -1ms # 连接池最大阻塞等待时间(使用负值表示没有限制)
         shutdown-timeout: 100ms # 关闭超时时间
 
+  #RabbitMQ配置
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin
+    virtual-host: /
+    # 发布确认
+    publisher-confirm-type: correlated
+    # 发布返回
+    publisher-returns: true
+    # 手动确认
+    listener:
+      simple:
+        acknowledge-mode: manual
+        retry:
+          enabled: true
+          max-attempts: 3
+        prefetch: 1
+
 #配置plus打印sql日志
 mybatis-plus:
   configuration:
@@ -75,3 +95,24 @@ app:
     # 机器ID (0-1023)，不同的服务实例需要配置不同的机器ID
     # 如果不配置，将自动根据IP地址生成
     machine-id: 2
+
+
+#自定义消息队列配置，发送锁定库存消息-》延迟exchange-》lock.queue-》死信exchange-》release.queue
+mqconfig:
+  #延迟队列，不能被监听消费
+  coupon_release_delay_queue: coupon.release.delay.queue
+
+  #延迟队列的消息过期后转发的队列
+  coupon_release_queue: coupon.release.queue
+
+  #交换机
+  coupon_event_exchange: coupon.event.exchange
+
+  #进入延迟队列的路由key
+  coupon_release_delay_routing_key: coupon.release.delay.routing.key
+
+  #消息过期，进入释放死信队列的key
+  coupon_release_routing_key: coupon.release.routing.key
+
+  #消息过期时间,毫秒,测试改为15秒
+  ttl: 15000
