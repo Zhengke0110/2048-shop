@@ -5,18 +5,51 @@
 <mapper namespace="fun.timu.shop.coupon.mapper.CouponTaskMapper">
 
     <resultMap id="BaseResultMap" type="fun.timu.shop.coupon.model.DO.CouponTaskDO">
-            <id property="id" column="id" />
-            <result property="couponRecordId" column="coupon_record_id" />
-            <result property="userId" column="user_id" />
-            <result property="outTradeNo" column="out_trade_no" />
-            <result property="lockState" column="lock_state" />
-            <result property="expireTime" column="expire_time" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
+        <id property="id" column="id"/>
+        <result property="couponRecordId" column="coupon_record_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="outTradeNo" column="out_trade_no"/>
+        <result property="lockState" column="lock_state"/>
+        <result property="expireTime" column="expire_time"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,coupon_record_id,user_id,out_trade_no,lock_state,expire_time,
+        id
+        ,coupon_record_id,user_id,out_trade_no,lock_state,expire_time,
         create_time,update_time
     </sql>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List_No_Id">
+        coupon_record_id
+        , user_id, out_trade_no, lock_state, expire_time, create_time, update_time
+    </sql>
+
+
+    <!--批量插入-->
+    <insert id="insertBatch" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+
+        insert into coupon_task
+        (
+        <include refid="Base_Column_List_No_Id"/>
+        )
+
+        values
+
+        <foreach collection="couponTaskList" item="item" index="index" separator=",">
+            (
+            #{item.couponRecordId},
+            #{item.userId},
+            #{item.outTradeNo},
+            #{item.lockState},
+            #{item.expireTime},
+            #{item.createTime},
+            #{item.updateTime}
+            )
+        </foreach>
+
+
+    </insert>
 </mapper>

@@ -18,9 +18,12 @@ public class InterceptorConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 1. 添加RPC安全校验拦截器 - 只拦截RPC接口
+        // 1. 添加RPC安全校验拦截器 - 拦截所有RPC接口
         registry.addInterceptor(rpcSecurityInterceptor)
-                .addPathPatterns("/api/coupon/v1/coupon/rpc/**")
+                .addPathPatterns(
+                        "/api/coupon/v1/coupon/rpc/**",    // 优惠券RPC接口
+                        "/api/coupon/v1/record/rpc/**"     // 优惠券记录RPC接口
+                )
                 .order(1); // 优先级最高
 
         // 2. 添加登录拦截器 - 拦截其他需要认证的接口
@@ -30,12 +33,14 @@ public class InterceptorConfig implements WebMvcConfigurer {
 
                 // 排除不需要拦截的路径（精确匹配具体接口）
                 .excludePathPatterns(
-                        "/api/coupon/v1/coupon/pageCoupon",
-                        "/api/coupon/v1/coupon/rpc/**"  // RPC接口已通过RPC安全拦截器验证
+                        "/api/coupon/v1/coupon/pageCoupon",     // 公共优惠券查询接口
+                        "/api/coupon/v1/coupon/rpc/**",         // 优惠券RPC接口
+                        "/api/coupon/v1/record/rpc/**"          // 优惠券记录RPC接口
                 )
                 .order(2); // 较低优先级
 
         log.info("拦截器注册成功 - RPC安全拦截器优先处理RPC接口，LoginInterceptor处理其他需要认证的接口");
+        log.info("RPC接口路径: /api/coupon/v1/coupon/rpc/**, /api/coupon/v1/record/rpc/**");
     }
 }
 

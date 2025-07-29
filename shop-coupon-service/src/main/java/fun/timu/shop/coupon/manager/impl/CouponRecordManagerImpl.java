@@ -109,4 +109,14 @@ public class CouponRecordManagerImpl extends ServiceImpl<CouponRecordMapper, Cou
                 .set("use_state", CouponStateEnum.EXPIRED.name())
                 .set("update_time", new Date()));
     }
+
+    @Override
+    public int lockUseStateBatch(Long userId, String useState, List<Long> lockCouponRecordIds) {
+        return couponRecordMapper.lockUseStateBatch(userId, useState, lockCouponRecordIds);
+    }
+
+    @Override
+    public void updateState(Long couponRecordId, String useState) {
+        couponRecordMapper.updateState(couponRecordId, useState);
+    }
 }

@@ -13,7 +13,7 @@ import java.util.Map;
 
 /**
  * 商品服务RPC客户端
- * 用于调用商品相关的远程服务
+ * 用于调用商品相关的远程服务，使用Nacos服务发现
  *
  * @author zhengke
  */
@@ -23,8 +23,8 @@ public class ProductRpcClient {
 
     private final HttpRpcClient httpRpcClient;
 
-    @Value("${rpc.product.service.url:http://localhost:9004}")
-    private String productServiceUrl;
+    // 使用服务名而不是硬编码URL，通过Nacos服务发现进行解析
+    private static final String PRODUCT_SERVICE_NAME = "shop-product-service";
 
     public ProductRpcClient(HttpRpcClient httpRpcClient) {
         this.httpRpcClient = httpRpcClient;
@@ -37,7 +37,7 @@ public class ProductRpcClient {
      * @return 商品详情
      */
     public JsonData getProductById(Long productId) {
-        String url = productServiceUrl + "/api/product/v1/product/" + productId;
+        String url = "http://" + PRODUCT_SERVICE_NAME + "/api/product/v1/product/" + productId;
 
         log.info("发送RPC请求 - 获取商品详情: productId={}", productId);
 
@@ -59,7 +59,7 @@ public class ProductRpcClient {
      * @return 商品详情列表
      */
     public JsonData getBatchProductDetails(List<Long> productIds) {
-        String url = productServiceUrl + "/api/product/v1/product/batch";
+        String url = "http://" + PRODUCT_SERVICE_NAME + "/api/product/v1/product/batch";
 
         Map<String, Object> request = new HashMap<>();
         request.put("productIds", productIds);
@@ -89,7 +89,7 @@ public class ProductRpcClient {
      * @return 验证结果
      */
     public JsonData validateStock(Long productId, Integer quantity) {
-        String url = productServiceUrl + "/api/product/v1/product/rpc/stock/validate";
+        String url = "http://" + PRODUCT_SERVICE_NAME + "/api/product/v1/product/rpc/stock/validate";
 
         Map<String, Object> request = new HashMap<>();
         request.put("productId", productId);
