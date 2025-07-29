@@ -1,8 +1,9 @@
 package fun.timu.shop.product.controller.request;
 
-import fun.timu.shop.product.enums.BannerPositionEnum;
-import fun.timu.shop.product.enums.BannerStatusEnum;
-import fun.timu.shop.product.enums.BannerTargetTypeEnum;
+
+import fun.timu.shop.common.enums.BannerPositionEnum;
+import fun.timu.shop.common.enums.BannerStatusEnum;
+import fun.timu.shop.common.enums.BannerTargetTypeEnum;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

@@ -1,6 +1,6 @@
 package fun.timu.shop.product.controller.request;
 
-import fun.timu.shop.product.enums.ProductStatusEnum;
+import fun.timu.shop.common.enums.ProductStatusEnum;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

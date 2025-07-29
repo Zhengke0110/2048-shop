@@ -3,8 +3,8 @@ package fun.timu.shop.product.manager.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import fun.timu.shop.product.enums.BannerStatusEnum;
-import fun.timu.shop.product.enums.DelFlagEnum;
+import fun.timu.shop.common.enums.BannerStatusEnum;
+import fun.timu.shop.common.enums.DelFlagEnum;
 import fun.timu.shop.product.manager.BannerManager;
 import fun.timu.shop.product.mapper.BannerMapper;
 import fun.timu.shop.product.model.DO.BannerDO;
@@ -22,7 +22,7 @@ public class BannerManagerImpl extends ServiceImpl<BannerMapper, BannerDO> imple
         LambdaQueryWrapper<BannerDO> wrapper = new LambdaQueryWrapper<>();
 
         // 基础过滤条件
-        wrapper.eq(BannerDO::getDelFlag, DelFlagEnum.NOT_DELETED.getCode());
+        wrapper.eq(BannerDO::getDelFlag, DelFlagEnum.NOT_DELETED.getFlag());
 
         // 根据查询条件构建where条件
         if (queryRequest != null) {
@@ -94,7 +94,7 @@ public class BannerManagerImpl extends ServiceImpl<BannerMapper, BannerDO> imple
     public BannerDO getByIdNotDeleted(Integer id) {
         LambdaQueryWrapper<BannerDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(BannerDO::getId, id)
-                .eq(BannerDO::getDelFlag, DelFlagEnum.NOT_DELETED.getCode());
+                .eq(BannerDO::getDelFlag, DelFlagEnum.NOT_DELETED.getFlag());
         return getOne(wrapper);
     }
 
@@ -107,7 +107,7 @@ public class BannerManagerImpl extends ServiceImpl<BannerMapper, BannerDO> imple
     public boolean logicDeleteById(Integer id) {
         LambdaUpdateWrapper<BannerDO> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(BannerDO::getId, id)
-                .set(BannerDO::getDelFlag, DelFlagEnum.DELETED.getCode());
+                .set(BannerDO::getDelFlag, DelFlagEnum.DELETED.getFlag());
         return update(wrapper);
     }
 
@@ -119,7 +119,7 @@ public class BannerManagerImpl extends ServiceImpl<BannerMapper, BannerDO> imple
 
         LambdaUpdateWrapper<BannerDO> wrapper = new LambdaUpdateWrapper<>();
         wrapper.in(BannerDO::getId, ids)
-                .set(BannerDO::getDelFlag, DelFlagEnum.DELETED.getCode());
+                .set(BannerDO::getDelFlag, DelFlagEnum.DELETED.getFlag());
         return update(wrapper);
     }
 
@@ -127,7 +127,7 @@ public class BannerManagerImpl extends ServiceImpl<BannerMapper, BannerDO> imple
     public boolean updateStatusById(Integer id, Integer status) {
         LambdaUpdateWrapper<BannerDO> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(BannerDO::getId, id)
-                .eq(BannerDO::getDelFlag, DelFlagEnum.NOT_DELETED.getCode())
+                .eq(BannerDO::getDelFlag, DelFlagEnum.NOT_DELETED.getFlag())
                 .set(BannerDO::getStatus, status);
         return update(wrapper);
     }

@@ -4,7 +4,7 @@ import fun.timu.shop.common.util.JsonData;
 import fun.timu.shop.product.controller.request.ProductCreateRequest;
 import fun.timu.shop.product.controller.request.ProductQueryRequest;
 import fun.timu.shop.product.controller.request.ProductUpdateRequest;
-import fun.timu.shop.product.enums.ProductStatusEnum;
+import fun.timu.shop.common.enums.ProductStatusEnum;
 import fun.timu.shop.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

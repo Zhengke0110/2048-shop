@@ -1,7 +1,8 @@
 package fun.timu.shop.product.controller.request;
 
-import fun.timu.shop.product.enums.BannerPositionEnum;
-import fun.timu.shop.product.enums.BannerStatusEnum;
+
+import fun.timu.shop.common.enums.BannerPositionEnum;
+import fun.timu.shop.common.enums.BannerStatusEnum;
 import lombok.Data;
 
 import java.util.Date;

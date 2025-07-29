@@ -1,5 +1,8 @@
 package fun.timu.shop.product.converter;
 
+import fun.timu.shop.common.enums.BannerPositionEnum;
+import fun.timu.shop.common.enums.BannerStatusEnum;
+import fun.timu.shop.common.enums.BannerTargetTypeEnum;
 import fun.timu.shop.product.controller.request.BannerCreateRequest;
 import fun.timu.shop.product.controller.request.BannerUpdateRequest;
 import fun.timu.shop.product.model.DO.BannerDO;
@@ -9,11 +12,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * 轮播图数据转换器
+ *
  * @author zhengke
  */
 @Component
@@ -64,13 +67,13 @@ public class BannerConverter {
      */
     private BannerDO buildBannerDOFromCreateRequest(BannerCreateRequest request) {
         BannerDO bannerDO = new BannerDO();
-        
+
         // 复制基础字段
         BeanUtils.copyProperties(request, bannerDO, "position", "targetType", "status");
-        
+
         // 转换枚举字段
         setEnumFields(bannerDO, request::getPosition, request::getTargetType, request::getStatus);
-        
+
         return bannerDO;
     }
 
@@ -80,13 +83,13 @@ public class BannerConverter {
     private BannerDO buildBannerDOFromUpdateRequest(Integer id, BannerUpdateRequest request) {
         BannerDO bannerDO = new BannerDO();
         bannerDO.setId(id);
-        
+
         // 复制基础字段
         BeanUtils.copyProperties(request, bannerDO, "position", "targetType", "status");
-        
+
         // 转换枚举字段
         setEnumFields(bannerDO, request::getPosition, request::getTargetType, request::getStatus);
-        
+
         return bannerDO;
     }
 
@@ -102,21 +105,21 @@ public class BannerConverter {
     /**
      * 设置枚举字段的通用方法
      */
-    private <T> void setEnumFields(BannerDO bannerDO, 
-                                  java.util.function.Supplier<T> positionSupplier,
-                                  java.util.function.Supplier<T> targetTypeSupplier,
-                                  java.util.function.Supplier<T> statusSupplier) {
-        
+    private <T> void setEnumFields(BannerDO bannerDO,
+                                   java.util.function.Supplier<T> positionSupplier,
+                                   java.util.function.Supplier<T> targetTypeSupplier,
+                                   java.util.function.Supplier<T> statusSupplier) {
+
         Optional.ofNullable(positionSupplier.get())
-                .map(pos -> ((fun.timu.shop.product.enums.BannerPositionEnum) pos).getCode())
+                .map(pos -> ((BannerPositionEnum) pos).getCode())
                 .ifPresent(bannerDO::setPosition);
-                
+
         Optional.ofNullable(targetTypeSupplier.get())
-                .map(type -> ((fun.timu.shop.product.enums.BannerTargetTypeEnum) type).getCode())
+                .map(type -> ((BannerTargetTypeEnum) type).getCode())
                 .ifPresent(bannerDO::setTargetType);
-                
+
         Optional.ofNullable(statusSupplier.get())
-                .map(status -> ((fun.timu.shop.product.enums.BannerStatusEnum) status).getCode())
+                .map(status -> ((BannerStatusEnum) status).getCode())
                 .ifPresent(bannerDO::setStatus);
     }
 }

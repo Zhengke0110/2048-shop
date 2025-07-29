@@ -1,36 +1,31 @@
-package fun.timu.shop.product.enums;
+package fun.timu.shop.common.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 轮播图跳转类型枚举
+ * 轮播图位置枚举
  *
  * @author zhengke
  */
 @Getter
 @AllArgsConstructor
-public enum BannerTargetTypeEnum {
+public enum BannerPositionEnum {
 
     /**
-     * 外部链接
+     * 首页轮播
      */
-    URL("URL", "外部链接"),
+    HOME("HOME", "首页轮播"),
 
     /**
-     * 商品详情
+     * 分类页轮播
      */
-    PRODUCT("PRODUCT", "商品详情"),
+    CATEGORY("CATEGORY", "分类页轮播"),
 
     /**
-     * 分类页
+     * 商品页轮播
      */
-    CATEGORY("CATEGORY", "分类页"),
-
-    /**
-     * 页面
-     */
-    PAGE("PAGE", "页面");
+    PRODUCT("PRODUCT", "商品页轮播");
 
     private final String code;
     private final String desc;
@@ -38,13 +33,13 @@ public enum BannerTargetTypeEnum {
     /**
      * 根据代码获取枚举
      */
-    public static BannerTargetTypeEnum getByCode(String code) {
+    public static BannerPositionEnum getByCode(String code) {
         if (code == null) {
             return null;
         }
-        for (BannerTargetTypeEnum targetType : values()) {
-            if (targetType.code.equals(code)) {
-                return targetType;
+        for (BannerPositionEnum position : values()) {
+            if (position.code.equals(code)) {
+                return position;
             }
         }
         return null;

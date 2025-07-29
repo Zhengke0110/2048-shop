@@ -1,10 +1,10 @@
 package fun.timu.shop.product.controller;
 
+import fun.timu.shop.common.enums.BannerStatusEnum;
 import fun.timu.shop.common.util.JsonData;
 import fun.timu.shop.product.controller.request.BannerCreateRequest;
 import fun.timu.shop.product.controller.request.BannerQueryRequest;
 import fun.timu.shop.product.controller.request.BannerUpdateRequest;
-import fun.timu.shop.product.enums.BannerStatusEnum;
 import fun.timu.shop.product.service.BannerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,7 +1,7 @@
 package fun.timu.shop.product.service.impl;
 
-import fun.timu.shop.product.enums.BannerStatusEnum;
-import fun.timu.shop.product.enums.DelFlagEnum;
+import fun.timu.shop.common.enums.BannerStatusEnum;
+import fun.timu.shop.common.enums.DelFlagEnum;
 import fun.timu.shop.product.manager.BannerManager;
 import fun.timu.shop.product.model.DO.BannerDO;
 import fun.timu.shop.product.model.VO.BannerVO;
@@ -122,7 +122,7 @@ public class BannerServiceImpl implements BannerService {
                 bannerDO.setClickCount(0);
             }
             if (bannerDO.getDelFlag() == null) {
-                bannerDO.setDelFlag(DelFlagEnum.NOT_DELETED.getCode());
+                bannerDO.setDelFlag(DelFlagEnum.NOT_DELETED.getFlag());
             }
 
             // 设置创建人信息

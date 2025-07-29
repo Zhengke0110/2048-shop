@@ -1,10 +1,15 @@
 package fun.timu.shop.common.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * 删除标记枚举
- * 
+ *
  * @author zhengke
  */
+@Getter
+@AllArgsConstructor
 public enum DelFlagEnum {
 
     /**
@@ -20,26 +25,13 @@ public enum DelFlagEnum {
     private final int flag;
     private final String description;
 
-    DelFlagEnum(int flag, String description) {
-        this.flag = flag;
-        this.description = description;
-    }
-
-    public int getFlag() {
-        return flag;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
     /**
      * 根据标记值获取枚举
-     * 
+     *
      * @param flag 标记值
      * @return 枚举实例
      */
-    public static DelFlagEnum valueOf(int flag) {
+    public static DelFlagEnum getByFlag(int flag) {
         for (DelFlagEnum delFlagEnum : DelFlagEnum.values()) {
             if (delFlagEnum.getFlag() == flag) {
                 return delFlagEnum;
@@ -50,7 +42,7 @@ public enum DelFlagEnum {
 
     /**
      * 判断是否为删除状态
-     * 
+     *
      * @param flag 标记值
      * @return true-已删除，false-未删除
      */
@@ -60,11 +52,26 @@ public enum DelFlagEnum {
 
     /**
      * 判断是否为未删除状态
-     * 
+     *
      * @param flag 标记值
      * @return true-未删除，false-已删除
      */
     public static boolean isNotDeleted(Integer flag) {
         return flag != null && flag.equals(NOT_DELETED.getFlag());
+    }
+
+    /**
+     * 检查是否为有效标记
+     *
+     * @param flag 标记值
+     * @return 是否有效
+     */
+    public static boolean isValidFlag(Integer flag) {
+        try {
+            getByFlag(flag);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }

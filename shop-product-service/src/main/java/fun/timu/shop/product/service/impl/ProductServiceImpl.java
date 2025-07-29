@@ -9,8 +9,8 @@ import fun.timu.shop.product.controller.request.ProductCreateRequest;
 import fun.timu.shop.product.controller.request.ProductQueryRequest;
 import fun.timu.shop.product.controller.request.ProductUpdateRequest;
 import fun.timu.shop.product.converter.ProductConverter;
-import fun.timu.shop.product.enums.DelFlagEnum;
-import fun.timu.shop.product.enums.ProductStatusEnum;
+import fun.timu.shop.common.enums.DelFlagEnum;
+import fun.timu.shop.common.enums.ProductStatusEnum;
 import fun.timu.shop.product.manager.ProductManager;
 import fun.timu.shop.product.model.DO.ProductDO;
 import fun.timu.shop.product.model.VO.ProductVO;
@@ -101,7 +101,7 @@ public class ProductServiceImpl implements ProductService {
                 productDO.setLockStock(0);
             }
             if (productDO.getDelFlag() == null) {
-                productDO.setDelFlag(DelFlagEnum.NOT_DELETED.getCode());
+                productDO.setDelFlag(DelFlagEnum.NOT_DELETED.getFlag());
             }
 
             log.info("管理员创建商品, 操作人: {}, 商品标题: {}", currentUser.getName(), productDO.getTitle());
@@ -492,7 +492,7 @@ public class ProductServiceImpl implements ProductService {
             }
 
             // 检查是否已删除
-            if (DelFlagEnum.DELETED.getCode() == productDO.getDelFlag()) {
+            if (DelFlagEnum.DELETED.getFlag() == productDO.getDelFlag()) {
                 log.warn("商品已删除: productId={}", productId);
                 return JsonData.buildError("商品已删除");
             }

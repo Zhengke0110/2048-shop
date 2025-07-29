@@ -1,4 +1,4 @@
-package fun.timu.shop.product.enums;
+package fun.timu.shop.common.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fun.timu.shop.order.mapper.ProductOrderItemMapper">
+
+    <resultMap id="BaseResultMap" type="fun.timu.shop.order.model.DO.ProductOrderItemDO">
+            <id property="id" column="id" />
+            <result property="productOrderId" column="product_order_id" />
+            <result property="outTradeNo" column="out_trade_no" />
+            <result property="productId" column="product_id" />
+            <result property="productName" column="product_name" />
+            <result property="productImg" column="product_img" />
+            <result property="categoryId" column="category_id" />
+            <result property="oldPrice" column="old_price" />
+            <result property="buyNum" column="buy_num" />
+            <result property="createTime" column="create_time" />
+            <result property="totalAmount" column="total_amount" />
+            <result property="amount" column="amount" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,product_order_id,out_trade_no,product_id,product_name,product_img,
+        category_id,old_price,buy_num,create_time,total_amount,
+        amount
+    </sql>
+</mapper>

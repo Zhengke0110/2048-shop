@@ -3,8 +3,8 @@ package fun.timu.shop.product.manager.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import fun.timu.shop.product.controller.request.ProductQueryRequest;
-import fun.timu.shop.product.enums.DelFlagEnum;
-import fun.timu.shop.product.enums.ProductStatusEnum;
+import fun.timu.shop.common.enums.DelFlagEnum;
+import fun.timu.shop.common.enums.ProductStatusEnum;
 import fun.timu.shop.product.manager.ProductManager;
 import fun.timu.shop.product.mapper.ProductMapper;
 import fun.timu.shop.product.model.DO.ProductDO;
@@ -32,7 +32,7 @@ public class ProductManagerImpl implements ProductManager {
         LambdaQueryWrapper<ProductDO> wrapper = new LambdaQueryWrapper<>();
 
         // 基础过滤条件
-        wrapper.eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getCode());
+        wrapper.eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getFlag());
 
         // 根据查询条件构建where条件
         if (queryRequest != null) {
@@ -98,7 +98,7 @@ public class ProductManagerImpl implements ProductManager {
     public ProductDO getByIdNotDeleted(Long id) {
         LambdaQueryWrapper<ProductDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ProductDO::getId, id)
-                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getCode());
+                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getFlag());
         return productMapper.selectOne(wrapper);
     }
 
@@ -114,7 +114,7 @@ public class ProductManagerImpl implements ProductManager {
         }
         LambdaQueryWrapper<ProductDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(ProductDO::getId, ids)
-                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getCode());
+                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getFlag());
         return productMapper.selectList(wrapper);
     }
 
@@ -132,7 +132,7 @@ public class ProductManagerImpl implements ProductManager {
     public boolean logicDeleteById(Long id) {
         LambdaUpdateWrapper<ProductDO> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(ProductDO::getId, id)
-                .set(ProductDO::getDelFlag, DelFlagEnum.DELETED.getCode());
+                .set(ProductDO::getDelFlag, DelFlagEnum.DELETED.getFlag());
         return productMapper.update(null, wrapper) > 0;
     }
 
@@ -143,7 +143,7 @@ public class ProductManagerImpl implements ProductManager {
         }
         LambdaUpdateWrapper<ProductDO> wrapper = new LambdaUpdateWrapper<>();
         wrapper.in(ProductDO::getId, ids)
-                .set(ProductDO::getDelFlag, DelFlagEnum.DELETED.getCode());
+                .set(ProductDO::getDelFlag, DelFlagEnum.DELETED.getFlag());
         return productMapper.update(null, wrapper) > 0;
     }
 
@@ -151,7 +151,7 @@ public class ProductManagerImpl implements ProductManager {
     public boolean updateStatusById(Long id, Integer status) {
         LambdaUpdateWrapper<ProductDO> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(ProductDO::getId, id)
-                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getCode())
+                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getFlag())
                 .set(ProductDO::getStatus, status);
         return productMapper.update(null, wrapper) > 0;
     }
@@ -163,7 +163,7 @@ public class ProductManagerImpl implements ProductManager {
         }
         LambdaUpdateWrapper<ProductDO> wrapper = new LambdaUpdateWrapper<>();
         wrapper.in(ProductDO::getId, ids)
-                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getCode())
+                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getFlag())
                 .set(ProductDO::getStatus, status);
         return productMapper.update(null, wrapper) > 0;
     }
@@ -192,7 +192,7 @@ public class ProductManagerImpl implements ProductManager {
     public boolean updateSalesCount(Long id, Integer salesCount) {
         LambdaUpdateWrapper<ProductDO> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(ProductDO::getId, id)
-                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getCode())
+                .eq(ProductDO::getDelFlag, DelFlagEnum.NOT_DELETED.getFlag())
                 .set(ProductDO::getSalesCount, salesCount);
         return productMapper.update(null, wrapper) > 0;
     }
