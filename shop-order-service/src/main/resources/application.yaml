@@ -105,12 +105,31 @@ cart:
 
 # 订单服务消息队列配置
 mqconfig:
-  # 订单相关配置
-  order_event_exchange: order.event.exchange
+  #订单关闭延迟队列，不能被监听消费
   order_close_delay_queue: order.close.delay.queue
-  order_close_delay_routing_key: order.close.delay.routing.key
+
+  #订单关闭延迟队列的消息过期后转发的队列
   order_close_queue: order.close.queue
-  order_close_routing_key: order.close.routing.key
+
+  #库存释放延迟队列，不能被监听消费
+  stock_release_delay_queue: stock.release.delay.queue
+  #库存释放延迟队列的消息过期后转发的队列
   stock_release_queue: stock.release.queue
+
+  #交换机
+  order_event_exchange: order.event.exchange
+
+  #进入订单关闭延迟队列的路由key
+  order_close_delay_routing_key: order.close.delay.routing.key
+
+  #消息过期，进入订单关闭队列的key,进入死信队列的key
+  order_close_routing_key: order.close.routing.key
+
+  #进入库存释放延迟队列的路由key
+  stock_release_delay_routing_key: stock.release.delay.routing.key
+
+  #消息过期，进入库存释放队列的key
   stock_release_routing_key: stock.release.routing.key
-  order_ttl: 1800000  # 30分钟超时时间
+
+  #消息过期时间,毫秒,测试改为15秒
+  ttl: 15000

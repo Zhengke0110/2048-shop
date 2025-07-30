@@ -58,6 +58,18 @@ public enum BizCodeEnum {
     COUPON_RECORD_LOCK_FAIL(270409, "优惠券锁定失败"),
 
     /**
+     * 订单
+     */
+    ORDER_CONFIRM_COUPON_FAIL(280001, "创建订单-优惠券使用失败,不满足价格条件"),
+    ORDER_CONFIRM_PRICE_FAIL(280002, "创建订单-验价失败"),
+    ORDER_CONFIRM_LOCK_PRODUCT_FAIL(280003, "创建订单-商品库存不足锁定失败"),
+    ORDER_CONFIRM_ADD_STOCK_TASK_FAIL(280004, "创建订单-新增商品库存锁定任务"),
+    ORDER_CONFIRM_TOKEN_NOT_EXIST(280008, "订单令牌缺少"),
+    ORDER_CONFIRM_TOKEN_EQUAL_FAIL(280009, "订单令牌不正确"),
+    ORDER_CONFIRM_NOT_EXIST(280010, "订单不存在"),
+    ORDER_CONFIRM_CART_ITEM_NOT_EXIST(280011, "购物车商品项不存在"),
+    ORDER_CONFIRM_SAVE_ORDER_FAIL(280012, "创建订单-保存订单失败"),
+    /**
      * 系统异常
      */
     SYSTEM_TIMEOUT_ERROR(500001, "系统繁忙，请稍后重试"),
