@@ -12,12 +12,6 @@ import org.apache.ibatis.annotations.Param;
  */
 public interface CouponMapper extends BaseMapper<CouponDO> {
     /**
-     * 扣减库存（已废弃，存在并发问题）
-     */
-    @Deprecated
-    int reduceStock(@Param("couponId") long couponId);
-    
-    /**
      * 带库存检查的扣减库存（乐观锁）
      * @param couponId 优惠券ID
      * @param expectedStock 期望的库存数量
