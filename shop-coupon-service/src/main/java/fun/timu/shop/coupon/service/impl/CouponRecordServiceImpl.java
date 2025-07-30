@@ -11,6 +11,7 @@ import fun.timu.shop.common.model.CouponRecordMessage;
 import fun.timu.shop.common.model.LoginUser;
 import fun.timu.shop.common.request.LockCouponRecordRequest;
 import fun.timu.shop.common.util.JsonData;
+import fun.timu.shop.common.util.RabbitMQUtil;
 import fun.timu.shop.coupon.config.RabbitMQConfig;
 import fun.timu.shop.coupon.feign.ProductOrderFeignService;
 import fun.timu.shop.coupon.manager.CouponRecordManager;
@@ -21,7 +22,6 @@ import fun.timu.shop.coupon.model.VO.CouponRecordVO;
 import fun.timu.shop.coupon.service.CouponRecordService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 public class CouponRecordServiceImpl implements CouponRecordService {
     private final CouponRecordManager recordManager;
     private final CouponTaskManager taskManager;
-    private final RabbitTemplate rabbitTemplate;
+    private final RabbitMQUtil rabbitMQUtil;
     private final RabbitMQConfig rabbitMQConfig;
     private final ProductOrderFeignService feignService;
 
@@ -215,20 +215,25 @@ public class CouponRecordServiceImpl implements CouponRecordService {
     private void sendDelayedReleaseMessages(List<CouponTaskDO> couponTaskDOList, String orderOutTradeNo) {
         int successCount = 0;
         int failCount = 0;
+        
+        // 30分钟延迟时间（毫秒）
+        Long delayTime = 30 * 60 * 1000L;
 
         for (CouponTaskDO couponTaskDO : couponTaskDOList) {
             try {
                 CouponRecordMessage couponRecordMessage = buildCouponRecordMessage(couponTaskDO, orderOutTradeNo);
 
-                rabbitTemplate.convertAndSend(
+                // 使用 RabbitMQUtil 发送延迟消息
+                rabbitMQUtil.sendDelayMessage(
                         rabbitMQConfig.getEventExchange(),
                         rabbitMQConfig.getCouponReleaseDelayRoutingKey(),
-                        couponRecordMessage
+                        couponRecordMessage,
+                        delayTime
                 );
 
                 successCount++;
-                log.debug("优惠券锁定延迟消息发送成功: taskId={}, recordId={}",
-                        couponTaskDO.getId(), couponTaskDO.getCouponRecordId());
+                log.debug("优惠券锁定延迟消息发送成功: taskId={}, recordId={}, delayTime={}ms",
+                        couponTaskDO.getId(), couponTaskDO.getCouponRecordId(), delayTime);
 
             } catch (Exception e) {
                 failCount++;
@@ -237,8 +242,8 @@ public class CouponRecordServiceImpl implements CouponRecordService {
             }
         }
 
-        log.info("延迟消息发送完成: orderOutTradeNo={}, total={}, success={}, fail={}",
-                orderOutTradeNo, couponTaskDOList.size(), successCount, failCount);
+        log.info("延迟消息发送完成: orderOutTradeNo={}, total={}, success={}, fail={}, delayTime={}ms",
+                orderOutTradeNo, couponTaskDOList.size(), successCount, failCount, delayTime);
 
         // 如果有消息发送失败，记录警告但不影响主流程
         if (failCount > 0) {

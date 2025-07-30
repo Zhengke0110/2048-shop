@@ -1,5 +1,6 @@
 package fun.timu.shop.common.util;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
@@ -14,18 +15,19 @@ import java.util.UUID;
  * RabbitMQ 消息发送工具类
  * 封装消息发送的通用方法
  */
-@Component
 @Slf4j
+@Component
+@AllArgsConstructor
 public class RabbitMQUtil {
 
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
+    private final RabbitTemplate rabbitTemplate;
 
     /**
      * 发送消息到指定交换机和路由键
-     * @param exchange 交换机名称
+     *
+     * @param exchange   交换机名称
      * @param routingKey 路由键
-     * @param message 消息内容
+     * @param message    消息内容
      */
     public void sendMessage(String exchange, String routingKey, Object message) {
         try {
@@ -40,10 +42,11 @@ public class RabbitMQUtil {
 
     /**
      * 发送延迟消息
-     * @param exchange 交换机名称
+     *
+     * @param exchange   交换机名称
      * @param routingKey 路由键
-     * @param message 消息内容
-     * @param delayTime 延迟时间（毫秒）
+     * @param message    消息内容
+     * @param delayTime  延迟时间（毫秒）
      */
     public void sendDelayMessage(String exchange, String routingKey, Object message, Long delayTime) {
         try {
@@ -53,10 +56,10 @@ public class RabbitMQUtil {
                 msg.getMessageProperties().setExpiration(String.valueOf(delayTime));
                 return msg;
             }, correlationData);
-            log.info("延迟消息发送成功：exchange={}, routingKey={}, message={}, delayTime={}ms", 
+            log.info("延迟消息发送成功：exchange={}, routingKey={}, message={}, delayTime={}ms",
                     exchange, routingKey, message, delayTime);
         } catch (Exception e) {
-            log.error("延迟消息发送失败：exchange={}, routingKey={}, message={}, delayTime={}ms", 
+            log.error("延迟消息发送失败：exchange={}, routingKey={}, message={}, delayTime={}ms",
                     exchange, routingKey, message, delayTime, e);
             throw new RuntimeException("延迟消息发送失败", e);
         }
@@ -64,9 +67,10 @@ public class RabbitMQUtil {
 
     /**
      * 发送消息带自定义属性
-     * @param exchange 交换机名称
+     *
+     * @param exchange   交换机名称
      * @param routingKey 路由键
-     * @param message 消息内容
+     * @param message    消息内容
      * @param properties 消息属性
      */
     public void sendMessageWithProperties(String exchange, String routingKey, Object message, MessageProperties properties) {

@@ -6,6 +6,7 @@ import fun.timu.shop.common.interceptor.LoginInterceptor;
 import fun.timu.shop.common.model.LoginUser;
 import fun.timu.shop.common.model.ProductMessage;
 import fun.timu.shop.common.util.JsonData;
+import fun.timu.shop.common.util.RabbitMQUtil;
 import fun.timu.shop.common.request.LockProductRequest;
 import fun.timu.shop.common.request.OrderItemRequest;
 import fun.timu.shop.common.request.QueryOrderStateRequest;
@@ -24,7 +25,6 @@ import fun.timu.shop.product.model.VO.ProductVO;
 import fun.timu.shop.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -48,7 +48,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductManager productManager;
     private final ProductConverter productConverter;
     private final ProductTaskManager productTaskManager;
-    private final RabbitTemplate rabbitTemplate;
+    private final RabbitMQUtil rabbitMQUtil;
     private final RabbitMQConfig rabbitMQConfig;
     private final OrderFeignService orderFeignService;
 
@@ -412,13 +412,22 @@ public class ProductServiceImpl implements ProductService {
                 productTaskManager.insert(productTaskDO);
                 log.info("商品库存锁定成功-插入商品product_task成功:{}", productTaskDO);
 
-                // 发送MQ延迟消息，用于超时释放商品库存
+                // 发送MQ延迟消息，用于超时释放商品库存（30分钟后）
                 ProductMessage productMessage = new ProductMessage();
                 productMessage.setOutTradeNo(outTradeNo);
                 productMessage.setTaskId(productTaskDO.getId());
 
-                rabbitTemplate.convertAndSend(rabbitMQConfig.getEventExchange(), rabbitMQConfig.getStockReleaseDelayRoutingKey(), productMessage);
-                log.info("商品库存锁定信息延迟消息发送成功:{}", productMessage);
+                // 使用 RabbitMQUtil 发送延迟消息，30分钟后自动释放商品库存
+                Long delayTime = 30 * 60 * 1000L; // 30分钟延迟时间（毫秒）
+                rabbitMQUtil.sendDelayMessage(
+                        rabbitMQConfig.getEventExchange(), 
+                        rabbitMQConfig.getStockReleaseDelayRoutingKey(), 
+                        productMessage, 
+                        delayTime
+                );
+                
+                log.info("商品库存锁定延迟消息发送成功: outTradeNo={}, taskId={}, delayTime={}ms", 
+                        outTradeNo, productTaskDO.getId(), delayTime);
             } else {
                 // 锁定失败，抛出异常
                 log.error("商品库存锁定失败: productId={}, buyNum={}", item.getProductId(), item.getBuyNum());

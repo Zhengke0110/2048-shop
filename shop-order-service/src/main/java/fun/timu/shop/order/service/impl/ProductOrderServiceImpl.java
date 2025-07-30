@@ -9,6 +9,7 @@ import fun.timu.shop.common.model.LoginUser;
 import fun.timu.shop.common.model.OrderMessage;
 import fun.timu.shop.common.util.CommonUtil;
 import fun.timu.shop.common.util.JsonData;
+import fun.timu.shop.common.util.RabbitMQUtil;
 import fun.timu.shop.common.request.LockCouponRecordRequest;
 import fun.timu.shop.coupon.model.VO.CouponRecordVO;
 import fun.timu.shop.order.config.RabbitMQConfig;
@@ -28,7 +29,6 @@ import fun.timu.shop.order.service.CartService;
 import fun.timu.shop.order.service.ProductOrderService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -52,7 +52,7 @@ public class ProductOrderServiceImpl implements ProductOrderService {
     private final ProductFeignService productFeignService;
     private final UserFeignService userFeignService;
     private final CartService cartService;
-    private final RabbitTemplate rabbitTemplate;
+    private final RabbitMQUtil rabbitMQUtil;
     private final RabbitMQConfig rabbitMQConfig;
 
 
@@ -104,11 +104,20 @@ public class ProductOrderServiceImpl implements ProductOrderService {
         //创建订单项
         this.saveProductOrderItems(orderOutTradeNo, productOrderDO.getId(), orderItemList);
 
-        //发送延迟消息，用于自动关单
+        //发送延迟消息，用于自动关单（30分钟后）
         OrderMessage orderMessage = new OrderMessage();
         orderMessage.setOutTradeNo(orderOutTradeNo);
-        rabbitTemplate.convertAndSend(rabbitMQConfig.getEventExchange(), rabbitMQConfig.getOrderCloseDelayRoutingKey(), orderMessage);
-
+        
+        // 使用 RabbitMQUtil 发送延迟消息，30分钟后自动关闭未支付订单
+        Long delayTime = 30 * 60 * 1000L; // 30分钟延迟时间（毫秒）
+        rabbitMQUtil.sendDelayMessage(
+                rabbitMQConfig.getEventExchange(), 
+                rabbitMQConfig.getOrderCloseDelayRoutingKey(), 
+                orderMessage, 
+                delayTime
+        );
+        
+        log.info("订单关闭延迟消息发送成功: outTradeNo={}, delayTime={}ms", orderOutTradeNo, delayTime);
 
         //创建支付  TODO
         log.info("创建订单成功，outTradeNo:{}", orderOutTradeNo);
