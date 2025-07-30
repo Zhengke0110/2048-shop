@@ -21,58 +21,6 @@ public class ProductOrderController {
     private final ProductOrderService productOrderService;
 
     /**
-     * RPC - 查询订单状态
-     * 该接口用于其他微服务查询订单状态
-     *
-     * @param requestBody 请求体，包含订单号
-     * @param request HTTP请求对象，用于获取调用方信息
-     * @return 订单状态信息
-     */
-    @PostMapping("/rpc/query-state")
-    public JsonData queryProductOrderState(@RequestBody Map<String, Object> requestBody, HttpServletRequest request) {
-        // 检查是否为RPC调用
-        String rpcSource = request.getHeader("RPC-Source");
-        
-        if (rpcSource == null || rpcSource.trim().isEmpty()) {
-            log.warn("缺少RPC调用来源标识");
-            return JsonData.buildError("非法的RPC调用");
-        }
-
-        // 从请求体中获取订单号
-        String outTradeNo = null;
-        try {
-            Object outTradeNoObj = requestBody.get("outTradeNo");
-            if (outTradeNoObj != null) {
-                outTradeNo = outTradeNoObj.toString();
-            }
-        } catch (Exception e) {
-            log.error("解析订单号失败", e);
-            return JsonData.buildError("订单号格式错误");
-        }
-
-        if (outTradeNo == null || outTradeNo.trim().isEmpty()) {
-            return JsonData.buildError("订单号不能为空");
-        }
-
-        log.info("RPC接口被调用 - 查询订单状态: outTradeNo={}, rpcSource={}", outTradeNo, rpcSource);
-
-        try {
-            String state = productOrderService.queryProductOrderState(outTradeNo);
-            
-            if (state == null || state.isEmpty()) {
-                log.warn("订单不存在: outTradeNo={}", outTradeNo);
-                return JsonData.buildError("订单不存在");
-            }
-            
-            log.info("查询订单状态成功: outTradeNo={}, state={}", outTradeNo, state);
-            return JsonData.buildSuccess(state);
-        } catch (Exception e) {
-            log.error("查询订单状态失败: outTradeNo={}", outTradeNo, e);
-            return JsonData.buildError("查询订单状态失败: " + e.getMessage());
-        }
-    }
-
-    /**
      * 提交订单
      *
      * @param orderRequest 订单对象

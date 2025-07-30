@@ -2,6 +2,7 @@ package fun.timu.shop.coupon.controller;
 
 import fun.timu.shop.common.util.JsonData;
 import fun.timu.shop.coupon.service.CouponService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,13 +12,10 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequestMapping("/api/coupon/v1/admin")
+@AllArgsConstructor
 public class CouponAdminController {
 
     private final CouponService couponService;
-
-    public CouponAdminController(CouponService couponService) {
-        this.couponService = couponService;
-    }
 
     /**
      * 手动触发批量更新过期优惠券

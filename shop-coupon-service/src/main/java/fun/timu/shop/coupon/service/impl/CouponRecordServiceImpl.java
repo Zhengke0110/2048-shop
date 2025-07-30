@@ -114,15 +114,26 @@ public class CouponRecordServiceImpl implements CouponRecordService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public JsonData lockCouponRecords(LockCouponRecordRequest recordRequest) {
-        // 1. 登录用户校验
-        LoginUser loginUser = LoginInterceptor.threadLocal.get();
-        if (loginUser == null || loginUser.getId() == null) {
-            throw new BizException(BizCodeEnum.ACCOUNT_UNLOGIN);
+        // 1. 获取用户ID - 支持RPC调用和普通Web请求
+        final Long userId; // 声明为final，确保在lambda中可以使用
+        
+        // 优先从请求对象中获取userId（RPC调用时传递）
+        if (recordRequest != null && recordRequest.getUserId() != null) {
+            userId = recordRequest.getUserId();
+            log.info("RPC调用 - 从请求参数获取用户ID: userId={}", userId);
+        } else {
+            // 从登录上下文获取（普通Web请求）
+            LoginUser loginUser = LoginInterceptor.threadLocal.get();
+            if (loginUser == null || loginUser.getId() == null) {
+                throw new BizException(BizCodeEnum.ACCOUNT_UNLOGIN);
+            }
+            userId = loginUser.getId();
+            log.info("Web请求 - 从登录上下文获取用户ID: userId={}", userId);
         }
 
         // 2. 参数校验
         if (recordRequest == null) {
-            log.warn("锁定优惠券记录请求参数为空: userId={}", loginUser.getId());
+            log.warn("锁定优惠券记录请求参数为空: userId={}", userId);
             throw new BizException(BizCodeEnum.COUPON_CONDITION_ERROR);
         }
 
@@ -130,30 +141,30 @@ public class CouponRecordServiceImpl implements CouponRecordService {
         List<Long> lockCouponRecordIds = recordRequest.getLockCouponRecordIds();
 
         if (orderOutTradeNo == null || orderOutTradeNo.trim().isEmpty()) {
-            log.warn("订单号为空: userId={}", loginUser.getId());
+            log.warn("订单号为空: userId={}", userId);
             throw new BizException(BizCodeEnum.COUPON_CONDITION_ERROR);
         }
 
         if (lockCouponRecordIds == null || lockCouponRecordIds.isEmpty()) {
-            log.warn("锁定优惠券记录ID列表为空: userId={}, orderOutTradeNo={}", loginUser.getId(), orderOutTradeNo);
+            log.warn("锁定优惠券记录ID列表为空: userId={}, orderOutTradeNo={}", userId, orderOutTradeNo);
             throw new BizException(BizCodeEnum.COUPON_CONDITION_ERROR);
         }
 
         // 限制批量操作数量，防止大批量操作影响性能
         if (lockCouponRecordIds.size() > 50) {
             log.warn("批量锁定优惠券数量超限: userId={}, count={}, orderOutTradeNo={}",
-                    loginUser.getId(), lockCouponRecordIds.size(), orderOutTradeNo);
+                    userId, lockCouponRecordIds.size(), orderOutTradeNo);
             throw new BizException(BizCodeEnum.COUPON_CONDITION_ERROR);
         }
 
         log.info("开始锁定优惠券记录: userId={}, orderOutTradeNo={}, recordIds={}",
-                loginUser.getId(), orderOutTradeNo, lockCouponRecordIds);
+                userId, orderOutTradeNo, lockCouponRecordIds);
 
         try {
             // 3. 批量锁定优惠券记录状态
-            int updateRows = recordManager.lockUseStateBatch(loginUser.getId(), CouponStateEnum.USED.name(), lockCouponRecordIds);
+            int updateRows = recordManager.lockUseStateBatch(userId, CouponStateEnum.USED.name(), lockCouponRecordIds);
             log.info("优惠券记录锁定完成: userId={}, updateRows={}, expectedRows={}",
-                    loginUser.getId(), updateRows, lockCouponRecordIds.size());
+                    userId, updateRows, lockCouponRecordIds.size());
 
             // 4. 预设过期时间（默认30分钟后过期）
             Date expireTime = new Date(System.currentTimeMillis() + 30 * 60 * 1000);
@@ -164,7 +175,7 @@ public class CouponRecordServiceImpl implements CouponRecordService {
                 couponTaskDO.setCreateTime(new Date());
                 couponTaskDO.setOutTradeNo(orderOutTradeNo);
                 couponTaskDO.setCouponRecordId(recordId);
-                couponTaskDO.setUserId(loginUser.getId());
+                couponTaskDO.setUserId(userId);
                 couponTaskDO.setLockState(StockTaskStateEnum.LOCK.name());
                 couponTaskDO.setExpireTime(expireTime);
                 return couponTaskDO;
@@ -172,12 +183,12 @@ public class CouponRecordServiceImpl implements CouponRecordService {
 
             int insertRows = taskManager.insertBatch(couponTaskDOList);
             log.info("优惠券任务记录创建完成: userId={}, insertRows={}, expectedRows={}",
-                    loginUser.getId(), insertRows, lockCouponRecordIds.size());
+                    userId, insertRows, lockCouponRecordIds.size());
 
             // 6. 校验操作结果的一致性
             if (lockCouponRecordIds.size() != insertRows || insertRows != updateRows) {
                 log.error("优惠券锁定操作数据不一致: userId={}, expectedCount={}, updateRows={}, insertRows={}",
-                        loginUser.getId(), lockCouponRecordIds.size(), updateRows, insertRows);
+                        userId, lockCouponRecordIds.size(), updateRows, insertRows);
                 throw new BizException(BizCodeEnum.COUPON_RECORD_LOCK_FAIL);
             }
 
@@ -185,15 +196,15 @@ public class CouponRecordServiceImpl implements CouponRecordService {
             sendDelayedReleaseMessages(couponTaskDOList, orderOutTradeNo);
 
             log.info("优惠券记录锁定成功: userId={}, orderOutTradeNo={}, recordCount={}",
-                    loginUser.getId(), orderOutTradeNo, lockCouponRecordIds.size());
+                    userId, orderOutTradeNo, lockCouponRecordIds.size());
 
             return JsonData.buildSuccess();
 
         } catch (BizException e) {
-            log.error("优惠券记录锁定业务异常: userId={}, orderOutTradeNo={}", loginUser.getId(), orderOutTradeNo, e);
+            log.error("优惠券记录锁定业务异常: userId={}, orderOutTradeNo={}", userId, orderOutTradeNo, e);
             throw e;
         } catch (Exception e) {
-            log.error("优惠券记录锁定系统异常: userId={}, orderOutTradeNo={}", loginUser.getId(), orderOutTradeNo, e);
+            log.error("优惠券记录锁定系统异常: userId={}, orderOutTradeNo={}", userId, orderOutTradeNo, e);
             throw new BizException(BizCodeEnum.COUPON_RECORD_LOCK_FAIL);
         }
     }
@@ -298,7 +309,12 @@ public class CouponRecordServiceImpl implements CouponRecordService {
      */
     private OrderStateEnum queryOrderState(String outTradeNo) {
         try {
-            JsonData jsonData = feignService.queryProductOrderState(outTradeNo);
+            // 构建请求参数
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("outTradeNo", outTradeNo);
+            
+            // 调用Feign客户端查询订单状态（RPC安全头部由拦截器自动添加）
+            JsonData jsonData = feignService.queryProductOrderState(requestBody);
             
             if (jsonData == null || jsonData.getCode() != 0) {
                 log.warn("查询订单状态失败或订单不存在: outTradeNo={}, response={}", 

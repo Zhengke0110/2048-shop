@@ -21,7 +21,7 @@ public class InterceptorConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         // 1. 添加RPC安全校验拦截器 - 只拦截RPC接口
         registry.addInterceptor(rpcSecurityInterceptor)
-                .addPathPatterns("/api/product/v1/product/batch", "/api/product/v1/product/rpc/**")
+                .addPathPatterns("/api/product/v1/rpc/**")
                 .order(1); // 优先级最高
 
         // 2. 添加登录拦截器 - 拦截其他需要认证的接口
@@ -47,8 +47,7 @@ public class InterceptorConfig implements WebMvcConfigurer {
                         "/api/product/v1/product/*",
                         
                         // RPC接口 - 微服务间调用，已通过RPC安全拦截器验证
-                        "/api/product/v1/product/batch",
-                        "/api/product/v1/product/rpc/**"
+                        "/api/product/v1/rpc/**"
                 )
                 .order(2); // 较低优先级
 

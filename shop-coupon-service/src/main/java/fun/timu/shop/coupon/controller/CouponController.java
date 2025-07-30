@@ -7,6 +7,7 @@ import fun.timu.shop.coupon.controller.request.UseCouponRequest;
 import fun.timu.shop.coupon.service.CouponService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +19,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/coupon/v1/coupon")
 @Validated
+@AllArgsConstructor
 public class CouponController {
     private final CouponService couponService;
-
-    public CouponController(CouponService couponService) {
-        this.couponService = couponService;
-    }
 
     /**
      * 分页查询优惠券活动列表
@@ -57,50 +55,6 @@ public class CouponController {
     @GetMapping("/add/task/{coupon_id}")
     public JsonData addTaskCoupon(@PathVariable("coupon_id") long couponId) {
         return couponService.addCoupon(couponId, CouponCategoryEnum.TASK);
-    }
-
-    /**
-     * RPC - 新用户注册福利发放
-     * 该接口用于为新注册用户自动发放所有新用户福利优惠券
-     *
-     * @param request HTTP请求对象，用于获取调用方信息
-     * @return 发放结果
-     */
-    @PostMapping("/rpc/new-user-benefits")
-    public JsonData grantNewUserBenefits(@RequestBody Map<String, Object> requestBody, HttpServletRequest request) {
-        // 检查是否为RPC调用
-        String rpcSource = request.getHeader("RPC-Source");
-
-        if (!"user-service".equals(rpcSource)) {
-            log.warn("非法的RPC调用来源: {}", rpcSource);
-            return JsonData.buildError("非法的RPC调用");
-        }
-
-        // 从请求体中获取用户ID
-        Long userId = null;
-        try {
-            Object userIdObj = requestBody.get("userId");
-            if (userIdObj != null) {
-                userId = Long.valueOf(userIdObj.toString());
-            }
-        } catch (Exception e) {
-            log.error("解析用户ID失败", e);
-            return JsonData.buildError("用户ID格式错误");
-        }
-
-        if (userId == null) {
-            return JsonData.buildError("用户ID不能为空");
-        }
-
-        log.info("RPC接口被调用 - 新用户注册福利发放: userId={}, rpcSource={}", userId, rpcSource);
-
-        try {
-            // 调用服务层方法，为新用户发放所有福利优惠券
-            return couponService.grantNewUserBenefits(userId);
-        } catch (Exception e) {
-            log.error("新用户福利发放失败: userId={}", userId, e);
-            return JsonData.buildError("福利发放失败: " + e.getMessage());
-        }
     }
 
     /**

@@ -49,6 +49,26 @@ spring:
           max-wait: -1ms # 连接池最大阻塞等待时间(使用负值表示没有限制)
         shutdown-timeout: 100ms # 关闭超时时间
 
+  #RabbitMQ配置
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    # 发布确认
+    publisher-confirm-type: correlated
+    # 发布返回
+    publisher-returns: true
+    # 手动确认
+    listener:
+      simple:
+        acknowledge-mode: manual
+        retry:
+          enabled: true
+          max-attempts: 3
+        prefetch: 1
+
 #配置plus打印sql日志
 mybatis-plus:
   configuration:
@@ -82,3 +102,14 @@ rpc:
   coupon:
     service:
       url: http://localhost:9002
+
+# 用户服务消息队列配置
+mqconfig:
+  # 用户相关配置
+  user_event_exchange: user.event.exchange
+  user_register_queue: user.register.queue
+  user_register_routing_key: user.register.routing.key
+  email_send_queue: email.send.queue
+  email_send_routing_key: email.send.routing.key
+  user_points_change_queue: user.points.change.queue
+  user_points_change_routing_key: user.points.change.routing.key

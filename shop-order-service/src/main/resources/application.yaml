@@ -49,6 +49,26 @@ spring:
           max-wait: -1ms # 连接池最大阻塞等待时间(使用负值表示没有限制)
         shutdown-timeout: 100ms # 关闭超时时间
 
+  #RabbitMQ配置
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin
+    virtual-host: /
+    # 发布确认
+    publisher-confirm-type: correlated
+    # 发布返回
+    publisher-returns: true
+    # 手动确认
+    listener:
+      simple:
+        acknowledge-mode: manual
+        retry:
+          enabled: true
+          max-attempts: 3
+        prefetch: 1
+
 #MyBatisPlus配置
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*.xml
@@ -83,14 +103,14 @@ cart:
     batch-size: 1000 # 批量处理大小
     parallel-threads: 4 # 并行加载线程数
 
-# RPC服务配置
-rpc:
-  product:
-    service:
-      url: http://localhost:9003 # 商品服务地址
-  user:
-    service:
-      url: http://localhost:9001 # 用户服务地址
-  coupon:
-    service:
-      url: http://localhost:9002 # 优惠券服务地址
+# 订单服务消息队列配置
+mqconfig:
+  # 订单相关配置
+  order_event_exchange: order.event.exchange
+  order_close_delay_queue: order.close.delay.queue
+  order_close_delay_routing_key: order.close.delay.routing.key
+  order_close_queue: order.close.queue
+  order_close_routing_key: order.close.routing.key
+  stock_release_queue: stock.release.queue
+  stock_release_routing_key: stock.release.routing.key
+  order_ttl: 1800000  # 30分钟超时时间

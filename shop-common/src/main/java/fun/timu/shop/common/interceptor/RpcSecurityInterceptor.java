@@ -43,10 +43,11 @@ public class RpcSecurityInterceptor implements HandlerInterceptor {
 
     static {
         // 初始化各个微服务的RPC密钥
-        RPC_SECRETS.put("order-service", "order_rpc_secret_2025_secure_key");
-        RPC_SECRETS.put("user-service", "user_rpc_secret_2025_secure_key");
-        RPC_SECRETS.put("coupon-service", "coupon_rpc_secret_2025_secure_key");
-        RPC_SECRETS.put("gateway-service", "gateway_rpc_secret_2025_secure_key");
+        RPC_SECRETS.put("shop-order-service", "order_rpc_secret_2025_secure_key");
+        RPC_SECRETS.put("shop-user-service", "user_rpc_secret_2025_secure_key");
+        RPC_SECRETS.put("shop-coupon-service", "coupon_rpc_secret_2025_secure_key");
+        RPC_SECRETS.put("shop-product-service", "product_rpc_secret_2025_secure_key");
+        RPC_SECRETS.put("shop-gateway", "gateway_rpc_secret_2025_secure_key");
     }
 
     @Override
@@ -134,17 +135,26 @@ public class RpcSecurityInterceptor implements HandlerInterceptor {
             String secret = RPC_SECRETS.get(rpcSource);
             String method = request.getMethod();
             String uri = request.getRequestURI();
+            
+            // 重要修复：标准化URI路径，确保与客户端生成签名时使用的路径一致
+            String normalizedUri = normalizeUriForSignature(uri);
 
-            // 构建签名原文：method + uri + rpcSource + timestamp + nonce + secret
-            String signData = method + uri + rpcSource + timestamp + nonce + secret;
+            // 构建签名原文：method + normalizedUri + rpcSource + timestamp + nonce + secret
+            String signData = method + normalizedUri + rpcSource + timestamp + nonce + secret;
 
             // 使用MD5生成签名（生产环境建议使用更安全的算法如HMAC-SHA256）
             String expectedSignature = DigestUtils.md5DigestAsHex(signData.getBytes(StandardCharsets.UTF_8));
 
             boolean isValid = expectedSignature.equalsIgnoreCase(signature);
             if (!isValid) {
-                log.debug("签名验证失败 - Expected: {}, Actual: {}, SignData: {}",
+                log.warn("RPC签名验证失败 - RpcSource: {}, Method: {}, OriginalURI: {}, NormalizedURI: {}, Timestamp: {}, Nonce: {}", 
+                        rpcSource, method, uri, normalizedUri, timestamp, nonce);
+                log.warn("签名验证失败详情 - Expected: {}, Actual: {}, SignData: {}",
                         expectedSignature, signature, signData);
+                log.warn("Secret存在性检查 - RpcSource: {}, SecretExists: {}, SecretLength: {}", 
+                        rpcSource, secret != null, secret != null ? secret.length() : 0);
+            } else {
+                log.info("RPC签名验证成功 - RpcSource: {}, Method: {}, NormalizedURI: {}", rpcSource, method, normalizedUri);
             }
 
             return isValid;
@@ -152,6 +162,33 @@ public class RpcSecurityInterceptor implements HandlerInterceptor {
             log.error("签名验证异常", e);
             return false;
         }
+    }
+    
+    /**
+     * 标准化URI路径，提取RPC相对路径
+     * 将完整的API路径转换为相对路径，确保与Feign客户端保持一致
+     * 
+     * 例如：
+     * - 完整路径: /api/coupon/v1/rpc/new-user-benefits
+     * - 相对路径: /new-user-benefits
+     */
+    private String normalizeUriForSignature(String uri) {
+        if (uri == null || uri.isEmpty()) {
+            return uri;
+        }
+        
+        // 查找 /rpc/ 的位置
+        int rpcIndex = uri.indexOf("/rpc/");
+        if (rpcIndex != -1) {
+            // 提取从 /rpc/ 开始的相对路径
+            String relativePath = uri.substring(rpcIndex);
+            log.debug("URI标准化 - Original: {}, Normalized: {}", uri, relativePath);
+            return relativePath;
+        }
+        
+        // 如果没有找到 /rpc/，返回原始URI
+        log.debug("未找到RPC路径标识，使用原始URI: {}", uri);
+        return uri;
     }
 
     /**

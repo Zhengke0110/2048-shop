@@ -24,10 +24,11 @@ public class RpcSecurityUtil {
     
     static {
         // 初始化各个微服务的RPC密钥
-        RPC_SECRETS.put("order-service", "order_rpc_secret_2025_secure_key");
-        RPC_SECRETS.put("user-service", "user_rpc_secret_2025_secure_key");
-        RPC_SECRETS.put("coupon-service", "coupon_rpc_secret_2025_secure_key");
-        RPC_SECRETS.put("gateway-service", "gateway_rpc_secret_2025_secure_key");
+        RPC_SECRETS.put("shop-order-service", "order_rpc_secret_2025_secure_key");
+        RPC_SECRETS.put("shop-user-service", "user_rpc_secret_2025_secure_key");
+        RPC_SECRETS.put("shop-coupon-service", "coupon_rpc_secret_2025_secure_key");
+        RPC_SECRETS.put("shop-product-service", "product_rpc_secret_2025_secure_key");
+        RPC_SECRETS.put("shop-gateway", "gateway_rpc_secret_2025_secure_key");
     }
 
     /**
@@ -85,7 +86,14 @@ public class RpcSecurityUtil {
         String signData = method + uri + serviceName + timestamp + nonce + secret;
         
         // 使用MD5生成签名（生产环境建议使用更安全的算法如HMAC-SHA256）
-        return DigestUtils.md5DigestAsHex(signData.getBytes(StandardCharsets.UTF_8));
+        String signature = DigestUtils.md5DigestAsHex(signData.getBytes(StandardCharsets.UTF_8));
+        
+        log.info("RPC签名生成成功 - ServiceName: {}, Method: {}, URI: {}, Signature: {}", 
+                serviceName, method, uri, signature);
+        log.debug("签名详细信息 - Timestamp: {}, Nonce: {}, SignData: {}, SecretLength: {}", 
+                timestamp, nonce, signData, secret.length());
+        
+        return signature;
     }
 
     /**

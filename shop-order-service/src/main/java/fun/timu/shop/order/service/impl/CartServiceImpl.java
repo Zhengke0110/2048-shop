@@ -5,7 +5,7 @@ import fun.timu.shop.common.enums.BizCodeEnum;
 import fun.timu.shop.common.interceptor.LoginInterceptor;
 import fun.timu.shop.common.model.LoginUser;
 import fun.timu.shop.common.util.JsonData;
-import fun.timu.shop.order.client.ProductRpcClient;
+import fun.timu.shop.order.feign.ProductFeignService;
 import fun.timu.shop.order.config.CartProperties;
 import fun.timu.shop.order.controller.request.AddToCartRequest;
 import fun.timu.shop.order.controller.request.BatchCartRequest;
@@ -41,7 +41,7 @@ public class CartServiceImpl implements CartService {
     private final CartManager cartManager;
     private final RedisTemplate<String, Object> redisTemplate;
     private final CartProperties cartProperties;
-    private final ProductRpcClient productRpcClient;
+    private final ProductFeignService productFeignService;
     private final CartConverter cartConverter;
 
     @Override
@@ -60,13 +60,16 @@ public class CartServiceImpl implements CartService {
 
         try {
             // 1. 验证商品是否存在和有效
-            JsonData productResult = productRpcClient.getProductById(productId);
+            JsonData productResult = productFeignService.getProductById(productId);
             if (productResult.getCode() != 0) {
                 return JsonData.buildError("商品不存在或已下架");
             }
 
             // 2. 验证库存
-            JsonData stockResult = productRpcClient.validateStock(productId, quantity);
+            Map<String, Object> stockRequest = new HashMap<>();
+            stockRequest.put("productId", productId);
+            stockRequest.put("quantity", quantity);
+            JsonData stockResult = productFeignService.validateStock(stockRequest);
             if (stockResult.getCode() != 0) {
                 return JsonData.buildError("商品库存不足");
             }
@@ -121,7 +124,10 @@ public class CartServiceImpl implements CartService {
 
         try {
             // 1. 验证库存
-            JsonData stockResult = productRpcClient.validateStock(productId, quantity);
+            Map<String, Object> stockRequest = new HashMap<>();
+            stockRequest.put("productId", productId);
+            stockRequest.put("quantity", quantity);
+            JsonData stockResult = productFeignService.validateStock(stockRequest);
             if (stockResult.getCode() != 0) {
                 return JsonData.buildError("商品库存不足");
             }
@@ -326,7 +332,9 @@ public class CartServiceImpl implements CartService {
                     .map(CartItemDTO::getProductId)
                     .collect(Collectors.toList());
 
-            JsonData productResult = productRpcClient.getBatchProductDetails(productIds);
+            Map<String, Object> batchRequest = new HashMap<>();
+            batchRequest.put("productIds", productIds);
+            JsonData productResult = productFeignService.getBatchProductDetails(batchRequest);
             if (productResult.getCode() != 0) {
                 return JsonData.buildError("获取商品信息失败");
             }

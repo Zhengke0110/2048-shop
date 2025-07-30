@@ -17,4 +17,10 @@ public class LockCouponRecordRequest {
     
     @NotBlank(message = "订单号不能为空")
     private String orderOutTradeNo;
+    
+    /**
+     * 用户ID - 用于RPC调用时传递用户信息
+     * 正常web请求时此字段可为空，从登录上下文获取
+     */
+    private Long userId;
 }
