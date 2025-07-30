@@ -4,27 +4,30 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.io.Serializable;
 import java.util.Date;
+
 import lombok.Data;
 
 /**
- * 优惠券锁定任务表
- * @TableName coupon_task
+ * 商品库存锁定任务表
+ *
+ * @TableName product_task
  */
-@TableName(value ="coupon_task")
+@TableName(value = "product_task")
 @Data
-public class CouponTaskDO implements Serializable {
+public class ProductTaskDO implements Serializable {
     /**
-     * 
+     *
      */
     @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 优惠券记录id
+     * 商品id
      */
-    private Long couponRecordId;
+    private Long productId;
 
     /**
      * 用户id
@@ -32,14 +35,24 @@ public class CouponTaskDO implements Serializable {
     private Long userId;
 
     /**
-     * 订单号
+     * 购买数量
      */
-    private String outTradeNo;
+    private Integer buyNum;
+
+    /**
+     * 商品标题
+     */
+    private String productName;
 
     /**
      * 锁定状态 LOCK锁定 FINISH完成 CANCEL取消
      */
     private String lockState;
+
+    /**
+     * 订单号
+     */
+    private String outTradeNo;
 
     /**
      * 锁定过期时间

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fun.timu.shop.product.mapper.ProductTaskMapper">
+
+    <resultMap id="BaseResultMap" type="fun.timu.shop.product.model.DO.ProductTaskDO">
+            <id property="id" column="id" />
+            <result property="productId" column="product_id" />
+            <result property="userId" column="user_id" />
+            <result property="buyNum" column="buy_num" />
+            <result property="productName" column="product_name" />
+            <result property="lockState" column="lock_state" />
+            <result property="outTradeNo" column="out_trade_no" />
+            <result property="expireTime" column="expire_time" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,product_id,user_id,buy_num,product_name,lock_state,
+        out_trade_no,expire_time,create_time,update_time
+    </sql>
+</mapper>
