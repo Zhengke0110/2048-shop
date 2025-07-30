@@ -2,6 +2,9 @@ package fun.timu.shop.order.mapper;
 
 import fun.timu.shop.order.model.DO.ProductOrderItemDO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
 * @author zhengke
@@ -11,6 +14,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface ProductOrderItemMapper extends BaseMapper<ProductOrderItemDO> {
 
+    void insertBatch( @Param("orderItemList") List<ProductOrderItemDO> list);
 }
 
 

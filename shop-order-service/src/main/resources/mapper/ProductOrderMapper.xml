@@ -5,25 +5,34 @@
 <mapper namespace="fun.timu.shop.order.mapper.ProductOrderMapper">
 
     <resultMap id="BaseResultMap" type="fun.timu.shop.order.model.DO.ProductOrderDO">
-            <id property="id" column="id" />
-            <result property="outTradeNo" column="out_trade_no" />
-            <result property="state" column="state" />
-            <result property="createTime" column="create_time" />
-            <result property="totalAmount" column="total_amount" />
-            <result property="payAmount" column="pay_amount" />
-            <result property="payType" column="pay_type" />
-            <result property="nickname" column="nickname" />
-            <result property="headImg" column="head_img" />
-            <result property="userId" column="user_id" />
-            <result property="del" column="del" />
-            <result property="updateTime" column="update_time" />
-            <result property="orderType" column="order_type" />
-            <result property="receiverAddress" column="receiver_address" />
+        <id property="id" column="id"/>
+        <result property="outTradeNo" column="out_trade_no"/>
+        <result property="state" column="state"/>
+        <result property="createTime" column="create_time"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="payAmount" column="pay_amount"/>
+        <result property="payType" column="pay_type"/>
+        <result property="nickname" column="nickname"/>
+        <result property="headImg" column="head_img"/>
+        <result property="userId" column="user_id"/>
+        <result property="del" column="del"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="orderType" column="order_type"/>
+        <result property="receiverAddress" column="receiver_address"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,out_trade_no,state,create_time,total_amount,pay_amount,
+        id
+        ,out_trade_no,state,create_time,total_amount,pay_amount,
         pay_type,nickname,head_img,user_id,del,
         update_time,order_type,receiver_address
     </sql>
+
+    <!--更新订单状态-->
+    <update id="updateOrderPayState">
+        update product_order
+        set `state`=#{newState}
+        where out_trade_no = #{outTradeNo}
+          and `state` = #{oldState}
+    </update>
 </mapper>
