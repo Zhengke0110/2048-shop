@@ -4,6 +4,8 @@ import com.alibaba.fastjson2.JSON;
 import fun.timu.shop.common.enums.BizCodeEnum;
 import fun.timu.shop.common.interceptor.LoginInterceptor;
 import fun.timu.shop.common.model.LoginUser;
+import fun.timu.shop.common.request.BatchProductRequest;
+import fun.timu.shop.common.request.ValidateStockRequest;
 import fun.timu.shop.common.util.JsonData;
 import fun.timu.shop.order.feign.ProductFeignService;
 import fun.timu.shop.order.config.CartProperties;
@@ -65,10 +67,10 @@ public class CartServiceImpl implements CartService {
                 return JsonData.buildError("商品不存在或已下架");
             }
 
-            // 2. 验证库存
-            Map<String, Object> stockRequest = new HashMap<>();
-            stockRequest.put("productId", productId);
-            stockRequest.put("quantity", quantity);
+                        // 2. 验证库存
+            ValidateStockRequest stockRequest = new ValidateStockRequest();
+            stockRequest.setProductId(productId);
+            stockRequest.setQuantity(quantity);
             JsonData stockResult = productFeignService.validateStock(stockRequest);
             if (stockResult.getCode() != 0) {
                 return JsonData.buildError("商品库存不足");
@@ -124,9 +126,9 @@ public class CartServiceImpl implements CartService {
 
         try {
             // 1. 验证库存
-            Map<String, Object> stockRequest = new HashMap<>();
-            stockRequest.put("productId", productId);
-            stockRequest.put("quantity", quantity);
+            ValidateStockRequest stockRequest = new ValidateStockRequest();
+            stockRequest.setProductId(productId);
+            stockRequest.setQuantity(quantity);
             JsonData stockResult = productFeignService.validateStock(stockRequest);
             if (stockResult.getCode() != 0) {
                 return JsonData.buildError("商品库存不足");
@@ -332,8 +334,8 @@ public class CartServiceImpl implements CartService {
                     .map(CartItemDTO::getProductId)
                     .collect(Collectors.toList());
 
-            Map<String, Object> batchRequest = new HashMap<>();
-            batchRequest.put("productIds", productIds);
+            BatchProductRequest batchRequest = new BatchProductRequest();
+            batchRequest.setProductIds(productIds);
             JsonData productResult = productFeignService.getBatchProductDetails(batchRequest);
             if (productResult.getCode() != 0) {
                 return JsonData.buildError("获取商品信息失败");
@@ -359,6 +361,80 @@ public class CartServiceImpl implements CartService {
 
         // 获取购物车详情，内部会验证商品有效性
         return getCartDetails();
+    }
+
+    @Override
+    @Transactional
+    public JsonData confirmCartItems(List<Long> productIds) {
+        LoginUser loginUser = LoginInterceptor.getCurrentUser();
+        if (loginUser == null) {
+            return JsonData.buildResult(BizCodeEnum.ACCOUNT_UNLOGIN);
+        }
+
+        if (productIds == null || productIds.isEmpty()) {
+            return JsonData.buildError("商品ID列表不能为空");
+        }
+
+        Long userId = loginUser.getId();
+
+        log.info("用户确认购物车商品信息: userId={}, productIds={}", userId, productIds);
+
+        try {
+            // 1. 获取购物车详情
+            JsonData cartDetailsResult = getCartDetails();
+            if (cartDetailsResult.getCode() != 0) {
+                return cartDetailsResult;
+            }
+
+            // 解析购物车数据
+            CartVO cartVO = JSON.parseObject(
+                    JSON.toJSONString(cartDetailsResult.getData()),
+                    CartVO.class
+            );
+
+            // 2. 根据指定的商品ID进行过滤，并准备清空对应的购物项
+            List<CartItemVO> confirmedItems = cartVO.getItems().stream()
+                    .filter(item -> productIds.contains(item.getProductId()))
+                    .collect(Collectors.toList());
+
+            if (confirmedItems.isEmpty()) {
+                return JsonData.buildError("购物车中没有找到指定的商品");
+            }
+
+            // 3. 验证库存（确认前最后一次检查）
+            for (CartItemVO item : confirmedItems) {
+                ValidateStockRequest stockRequest = new ValidateStockRequest();
+                stockRequest.setProductId(item.getProductId());
+                stockRequest.setQuantity(item.getQuantity());
+                JsonData stockResult = productFeignService.validateStock(stockRequest);
+                if (stockResult.getCode() != 0) {
+                    return JsonData.buildError("商品 " + item.getTitle() + " 库存不足");
+                }
+            }
+
+            // 4. 清空对应的购物项
+            List<Long> confirmedProductIds = confirmedItems.stream()
+                    .map(CartItemVO::getProductId)
+                    .collect(Collectors.toList());
+
+            // 从Redis批量删除
+            String redisKey = getCartRedisKey(userId);
+            String[] productFields = confirmedProductIds.stream()
+                    .map(this::getProductField)
+                    .toArray(String[]::new);
+            redisTemplate.opsForHash().delete(redisKey, (Object[]) productFields);
+
+            // 从MySQL批量删除
+            cartManager.deleteBatchByUserIdAndProductIds(userId, confirmedProductIds);
+
+            log.info("确认购物车商品信息成功: userId={}, confirmedCount={}", userId, confirmedItems.size());
+
+            return JsonData.buildSuccess(confirmedItems);
+
+        } catch (Exception e) {
+            log.error("确认购物车商品信息失败: userId={}, productIds={}", userId, productIds, e);
+            return JsonData.buildError("确认失败，请重试");
+        }
     }
 
     /**

@@ -26,15 +26,6 @@ public interface CouponManager extends IService<CouponDO> {
     CouponDO selectOne(Long id, String category);
 
     /**
-     * 扣减库存（已废弃，存在并发问题）
-     *
-     * @param couponId 优惠券ID
-     * @return 影响行数
-     */
-    @Deprecated
-    int reduceStock(Long couponId);
-
-    /**
      * 带库存检查的扣减库存（乐观锁）
      *
      * @param couponId      优惠券ID

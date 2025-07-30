@@ -1,9 +1,12 @@
 package fun.timu.shop.product.service;
 
+import fun.timu.shop.common.model.ProductMessage;
 import fun.timu.shop.common.util.JsonData;
+import fun.timu.shop.common.request.LockProductRequest;
 import fun.timu.shop.product.controller.request.ProductCreateRequest;
 import fun.timu.shop.product.controller.request.ProductQueryRequest;
 import fun.timu.shop.product.controller.request.ProductUpdateRequest;
+import fun.timu.shop.product.model.VO.ProductVO;
 
 import java.util.List;
 
@@ -85,4 +88,19 @@ public interface ProductService {
      * 验证商品库存（RPC接口用）
      */
     JsonData validateStock(Long productId, Integer quantity);
+
+    /**
+     * 锁定商品库存（批量）
+     */
+    JsonData lockProductStock(LockProductRequest lockProductRequest);
+
+    /**
+     * 根据ID批量查询商品
+     */
+    List<ProductVO> findProductsByIdBatch(List<Long> productIds);
+
+    /**
+     * 释放商品库存
+     */
+    boolean releaseProductStock(ProductMessage productMessage);
 }

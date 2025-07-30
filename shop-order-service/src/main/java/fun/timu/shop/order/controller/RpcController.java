@@ -1,13 +1,12 @@
 package fun.timu.shop.order.controller;
 
 import fun.timu.shop.common.util.JsonData;
+import fun.timu.shop.common.request.QueryOrderStateRequest;
 import fun.timu.shop.order.service.ProductOrderService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 /**
  * 订单服务 RPC 接口控制器
@@ -25,12 +24,12 @@ public class RpcController {
      * RPC - 查询订单状态
      * 该接口用于其他微服务查询订单状态
      *
-     * @param requestBody 请求体，包含订单号
-     * @param request     HTTP请求对象，用于获取调用方信息
+     * @param queryRequest 查询订单状态请求
+     * @param request      HTTP请求对象，用于获取调用方信息
      * @return 订单状态信息
      */
     @PostMapping("/query-state")
-    public JsonData queryProductOrderState(@RequestBody Map<String, Object> requestBody, HttpServletRequest request) {
+    public JsonData queryProductOrderState(@RequestBody QueryOrderStateRequest queryRequest, HttpServletRequest request) {
         // 检查是否为RPC调用
         String rpcSource = request.getHeader("RPC-Source");
 
@@ -45,18 +44,11 @@ public class RpcController {
             return JsonData.buildError("非法的RPC调用");
         }
 
-        // 从请求体中获取订单号
-        String outTradeNo = null;
-        try {
-            Object outTradeNoObj = requestBody.get("outTradeNo");
-            if (outTradeNoObj != null) {
-                outTradeNo = outTradeNoObj.toString();
-            }
-        } catch (Exception e) {
-            log.error("解析订单号失败", e);
-            return JsonData.buildError("订单号格式错误");
+        if (queryRequest == null) {
+            return JsonData.buildError("请求参数不能为空");
         }
 
+        String outTradeNo = queryRequest.getOutTradeNo();
         if (outTradeNo == null || outTradeNo.trim().isEmpty()) {
             return JsonData.buildError("订单号不能为空");
         }

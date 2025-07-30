@@ -17,4 +17,9 @@ public class ProductOrderManagerImpl extends ServiceImpl<ProductOrderMapper, Pro
     public ProductOrderDO selectOne(String outTradeNo) {
         return productOrderMapper.selectOne(new QueryWrapper<ProductOrderDO>().eq("out_trade_no", outTradeNo));
     }
+
+    @Override
+    public boolean insert(ProductOrderDO productOrderDO) {
+        return productOrderMapper.insert(productOrderDO) > 0;
+    }
 }

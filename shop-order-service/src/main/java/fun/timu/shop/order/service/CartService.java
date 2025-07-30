@@ -5,6 +5,8 @@ import fun.timu.shop.order.controller.request.AddToCartRequest;
 import fun.timu.shop.order.controller.request.BatchCartRequest;
 import fun.timu.shop.order.controller.request.UpdateCartRequest;
 
+import java.util.List;
+
 /**
  * 购物车服务接口
  * 
@@ -78,4 +80,13 @@ public interface CartService {
      * @return 验证结果
      */
     JsonData validateCartItems();
+
+    /**
+     * 确认购物车商品信息
+     * 根据指定的商品ID列表过滤购物车商品，并清空对应的购物项
+     * 
+     * @param productIds 需要确认的商品ID列表
+     * @return 确认的商品列表
+     */
+    JsonData confirmCartItems(List<Long> productIds);
 }

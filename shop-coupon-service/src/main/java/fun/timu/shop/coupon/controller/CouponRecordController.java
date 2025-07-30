@@ -1,17 +1,12 @@
 package fun.timu.shop.coupon.controller;
 
 import fun.timu.shop.common.util.JsonData;
-import fun.timu.shop.coupon.controller.request.LockCouponRecordRequest;
 import fun.timu.shop.coupon.service.CouponRecordService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 
 @Slf4j
@@ -34,17 +29,5 @@ public class CouponRecordController {
                          @RequestParam(defaultValue = "10") @Min(value = 1, message = "每页大小必须大于0") int size) {
         log.info("分页查询优惠券记录: page={}, size={}", page, size);
         return couponRecordService.page(page, size);
-    }
-
-    /**
-     * 根据ID查询优惠券记录详情
-     *
-     * @param recordId 优惠券记录ID
-     * @return 优惠券记录详情
-     */
-    @GetMapping("/detail/{recordId}")
-    public JsonData findById(@PathVariable @Min(value = 1, message = "记录ID必须大于0") long recordId) {
-        log.info("查询优惠券记录详情: recordId={}", recordId);
-        return couponRecordService.findById(recordId);
     }
 }

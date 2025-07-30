@@ -1,5 +1,6 @@
 package fun.timu.shop.order.service;
 
+import fun.timu.shop.common.model.OrderMessage;
 import fun.timu.shop.common.util.JsonData;
 import fun.timu.shop.order.controller.request.ConfirmOrderRequest;
 import fun.timu.shop.order.model.DO.ProductOrderDO;
@@ -27,4 +28,11 @@ public interface ProductOrderService {
      * @return
      */
     String queryProductOrderState(String outTradeNo);
+
+    /**
+     * 队列监听，定时关单
+     * @param orderMessage
+     * @return
+     */
+    boolean closeProductOrder(OrderMessage orderMessage);
 }

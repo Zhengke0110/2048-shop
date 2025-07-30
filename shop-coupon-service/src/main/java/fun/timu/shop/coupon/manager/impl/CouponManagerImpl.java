@@ -41,10 +41,7 @@ public class CouponManagerImpl extends ServiceImpl<CouponMapper, CouponDO> imple
         return couponDO;
     }
 
-    @Override
-    public int reduceStock(Long couponId) {
-        return couponMapper.reduceStock(couponId);
-    }
+
 
     @Override
     public int reduceStockWithCheck(Long couponId, int expectedStock) {

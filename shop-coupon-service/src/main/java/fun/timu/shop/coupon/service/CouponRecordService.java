@@ -1,11 +1,8 @@
 package fun.timu.shop.coupon.service;
 
 import fun.timu.shop.common.model.CouponRecordMessage;
+import fun.timu.shop.common.request.LockCouponRecordRequest;
 import fun.timu.shop.common.util.JsonData;
-import fun.timu.shop.coupon.controller.request.LockCouponRecordRequest;
-import fun.timu.shop.coupon.model.VO.CouponRecordVO;
-
-import java.util.Map;
 
 /**
  * @author zhengke

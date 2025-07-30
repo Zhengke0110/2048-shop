@@ -1,27 +1,39 @@
 package fun.timu.shop.product.service.impl;
 
-import fun.timu.shop.common.enums.BizCodeEnum;
+import fun.timu.shop.common.enums.*;
 import fun.timu.shop.common.exception.BizException;
 import fun.timu.shop.common.interceptor.LoginInterceptor;
 import fun.timu.shop.common.model.LoginUser;
+import fun.timu.shop.common.model.ProductMessage;
 import fun.timu.shop.common.util.JsonData;
+import fun.timu.shop.common.request.LockProductRequest;
+import fun.timu.shop.common.request.OrderItemRequest;
+import fun.timu.shop.common.request.QueryOrderStateRequest;
+import fun.timu.shop.product.config.RabbitMQConfig;
 import fun.timu.shop.product.controller.request.ProductCreateRequest;
 import fun.timu.shop.product.controller.request.ProductQueryRequest;
 import fun.timu.shop.product.controller.request.ProductUpdateRequest;
 import fun.timu.shop.product.converter.ProductConverter;
-import fun.timu.shop.common.enums.DelFlagEnum;
-import fun.timu.shop.common.enums.ProductStatusEnum;
+import fun.timu.shop.product.feign.OrderFeignService;
 import fun.timu.shop.product.manager.ProductManager;
+import fun.timu.shop.product.manager.ProductTaskManager;
+import fun.timu.shop.product.mapper.ProductMapper;
 import fun.timu.shop.product.model.DO.ProductDO;
+import fun.timu.shop.product.model.DO.ProductTaskDO;
 import fun.timu.shop.product.model.VO.ProductVO;
 import fun.timu.shop.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author zhengke
@@ -35,6 +47,10 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductManager productManager;
     private final ProductConverter productConverter;
+    private final ProductTaskManager productTaskManager;
+    private final RabbitTemplate rabbitTemplate;
+    private final RabbitMQConfig rabbitMQConfig;
+    private final OrderFeignService orderFeignService;
 
     @Override
     public JsonData list(ProductQueryRequest queryRequest) {
@@ -239,8 +255,7 @@ public class ProductServiceImpl implements ProductService {
 
             ProductStatusEnum productStatus = ProductStatusEnum.getByCode(status);
             String statusDesc = productStatus != null ? productStatus.getDesc() : "未知状态";
-            log.info("管理员更新商品状态, 操作人: {}, 商品ID: {}, 状态: {}",
-                    currentUser.getName(), id, statusDesc);
+            log.info("管理员更新商品状态, 操作人: {}, 商品ID: {}, 状态: {}", currentUser.getName(), id, statusDesc);
 
             boolean success = productManager.updateStatusById(id, status);
             if (success) {
@@ -273,8 +288,7 @@ public class ProductServiceImpl implements ProductService {
 
             ProductStatusEnum productStatus = ProductStatusEnum.getByCode(status);
             String statusDesc = productStatus != null ? productStatus.getDesc() : "未知状态";
-            log.info("管理员批量更新商品状态, 操作人: {}, 商品数量: {}, 状态: {}",
-                    currentUser.getName(), ids.size(), statusDesc);
+            log.info("管理员批量更新商品状态, 操作人: {}, 商品数量: {}, 状态: {}", currentUser.getName(), ids.size(), statusDesc);
 
             boolean success = productManager.batchUpdateStatus(ids, status);
             if (success) {
@@ -360,6 +374,60 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
+    /**
+     * 锁定商品库存
+     * <p>
+     * 1)遍历商品，锁定每个商品购买数量
+     * 2)每一次锁定的时候，都要发送延迟消息
+     *
+     * @param lockProductRequest
+     * @return
+     */
+    @Override
+    public JsonData lockProductStock(LockProductRequest lockProductRequest) {
+        String outTradeNo = lockProductRequest.getOrderOutTradeNo();
+        List<OrderItemRequest> itemList = lockProductRequest.getOrderItemList();
+
+        // 一行代码，提取对象里面的id并加入到集合里面
+        List<Long> productIdList = itemList.stream().map(OrderItemRequest::getProductId).collect(Collectors.toList());
+
+        // 批量查询
+        List<ProductVO> productVOList = this.findProductsByIdBatch(productIdList);
+
+        // 分组
+        Map<Long, ProductVO> productMap = productVOList.stream().collect(Collectors.toMap(ProductVO::getId, Function.identity()));
+
+        for (OrderItemRequest item : itemList) {
+            // 锁定商品记录
+            boolean result = productManager.lockStock(item.getProductId(), item.getBuyNum());
+            if (result) {
+                // 锁定成功，插入商品product_task记录
+                ProductVO productVO = productMap.get(item.getProductId());
+                ProductTaskDO productTaskDO = new ProductTaskDO();
+                productTaskDO.setBuyNum(item.getBuyNum());
+                productTaskDO.setLockState(StockTaskStateEnum.LOCK.name());
+                productTaskDO.setProductId(item.getProductId());
+                productTaskDO.setProductName(productVO.getTitle());
+                productTaskDO.setOutTradeNo(outTradeNo);
+                productTaskManager.insert(productTaskDO);
+                log.info("商品库存锁定成功-插入商品product_task成功:{}", productTaskDO);
+
+                // 发送MQ延迟消息，用于超时释放商品库存
+                ProductMessage productMessage = new ProductMessage();
+                productMessage.setOutTradeNo(outTradeNo);
+                productMessage.setTaskId(productTaskDO.getId());
+
+                rabbitTemplate.convertAndSend(rabbitMQConfig.getEventExchange(), rabbitMQConfig.getStockReleaseDelayRoutingKey(), productMessage);
+                log.info("商品库存锁定信息延迟消息发送成功:{}", productMessage);
+            } else {
+                // 锁定失败，抛出异常
+                log.error("商品库存锁定失败: productId={}, buyNum={}", item.getProductId(), item.getBuyNum());
+                throw new BizException(BizCodeEnum.ORDER_CONFIRM_LOCK_PRODUCT_FAIL);
+            }
+        }
+        return JsonData.buildSuccess();
+    }
+
     @Override
     public JsonData releaseLockStock(Long id, Integer quantity) {
         try {
@@ -437,7 +505,7 @@ public class ProductServiceImpl implements ProductService {
             log.info("批量获取商品详情: productIds={}", productIds);
 
             List<ProductDO> productDOList = productManager.listByIds(productIds);
-            
+
             if (productDOList.isEmpty()) {
                 log.warn("未找到任何商品: productIds={}", productIds);
                 return JsonData.buildSuccess(List.of());
@@ -453,7 +521,7 @@ public class ProductServiceImpl implements ProductService {
                 productInfo.put("price", productDO.getPrice());
                 productInfo.put("stock", productDO.getStock());
                 productInfo.put("status", productDO.getStatus());
-                
+
                 productMap.put(productDO.getId().toString(), productInfo);
             }
 
@@ -505,18 +573,107 @@ public class ProductServiceImpl implements ProductService {
             }
 
             log.info("库存验证通过: productId={}, quantity={}, availableStock={}", productId, quantity, availableStock);
-            
+
             Map<String, Object> result = new HashMap<>();
             result.put("productId", productId);
             result.put("requestQuantity", quantity);
             result.put("availableStock", availableStock);
             result.put("valid", true);
-            
+
             return JsonData.buildSuccess(result);
 
         } catch (Exception e) {
             log.error("验证商品库存失败: productId={}, quantity={}", productId, quantity, e);
             return JsonData.buildError("验证库存失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<ProductVO> findProductsByIdBatch(List<Long> productIds) {
+        try {
+            if (productIds == null || productIds.isEmpty()) {
+                return List.of();
+            }
+
+            List<ProductDO> productDOList = productManager.listByIds(productIds);
+            return productConverter.convertToVOList(productDOList);
+        } catch (Exception e) {
+            log.error("批量查询商品失败: productIds={}", productIds, e);
+            return List.of();
+        }
+    }
+
+    /**
+     * 释放商品库存
+     *
+     * @param productMessage
+     * @return
+     */
+    @Override
+    public boolean releaseProductStock(ProductMessage productMessage) {
+        if (productMessage == null) {
+            log.warn("商品消息为空");
+            return true;
+        }
+
+        if (productMessage.getTaskId() == null) {
+            log.warn("任务ID为空，消息体为:{}", productMessage);
+            return true;
+        }
+
+        // 查询工作单状态
+        ProductTaskDO taskDO = productTaskManager.selectById(productMessage.getTaskId());
+        if (taskDO == null) {
+            log.warn("工作单不存在，消息体为:{}", productMessage);
+            return true;
+        }
+
+        // lock状态才处理
+        if (taskDO.getLockState().equalsIgnoreCase(StockTaskStateEnum.LOCK.name())) {
+
+            // 查询订单状态
+            QueryOrderStateRequest queryRequest = new QueryOrderStateRequest();
+            queryRequest.setOutTradeNo(productMessage.getOutTradeNo());
+
+            JsonData jsonData = orderFeignService.queryProductOrderState(queryRequest);
+
+            if (jsonData.getCode() == 0) {
+                String state = jsonData.getData().toString();
+
+                if (OrderStateEnum.NEW.name().equalsIgnoreCase(state)) {
+                    // 状态是NEW新建状态，则返回给消息队列重新投递
+                    log.warn("订单状态是NEW,返回给消息队列，重新投递:{}", productMessage);
+                    return false;
+                }
+
+                // 如果是已经支付
+                if (OrderStateEnum.PAY.name().equalsIgnoreCase(state)) {
+                    // 如果已经支付，修改task状态为finish
+                    taskDO.setLockState(StockTaskStateEnum.FINISH.name());
+                    productTaskManager.updateEntity(taskDO, productMessage.getTaskId());
+                    log.info("订单已经支付，修改库存锁定工作单FINISH状态:{}", productMessage);
+                    return true;
+                }
+            }
+
+            // 订单不存在，或者订单被取消，确认消息,修改task状态为CANCEL,恢复商品库存
+            log.warn("订单不存在，或者订单被取消，确认消息,修改task状态为CANCEL,恢复商品库存,message:{}", productMessage);
+            taskDO.setLockState(StockTaskStateEnum.CANCEL.name());
+            productTaskManager.updateEntity(taskDO, productMessage.getTaskId());
+
+            // 恢复商品库存，将锁定库存的值减去当前购买的值
+            boolean result = productManager.releaseLockStock(taskDO.getProductId(), taskDO.getBuyNum());
+            if (result) {
+                log.info("成功恢复商品库存，商品ID:{}, 恢复数量:{}", taskDO.getProductId(), taskDO.getBuyNum());
+            } else {
+                log.warn("恢复商品库存失败，商品ID:{}, 恢复数量:{}", taskDO.getProductId(), taskDO.getBuyNum());
+            }
+
+            return true;
+
+        } else {
+            log.warn("工作单状态不是LOCK,state={},消息体={}", taskDO.getLockState(), productMessage);
+            return true;
         }
     }
 }

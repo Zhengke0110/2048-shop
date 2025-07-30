@@ -9,9 +9,9 @@ import fun.timu.shop.common.exception.BizException;
 import fun.timu.shop.common.interceptor.LoginInterceptor;
 import fun.timu.shop.common.model.CouponRecordMessage;
 import fun.timu.shop.common.model.LoginUser;
+import fun.timu.shop.common.request.LockCouponRecordRequest;
 import fun.timu.shop.common.util.JsonData;
 import fun.timu.shop.coupon.config.RabbitMQConfig;
-import fun.timu.shop.coupon.controller.request.LockCouponRecordRequest;
 import fun.timu.shop.coupon.feign.ProductOrderFeignService;
 import fun.timu.shop.coupon.manager.CouponRecordManager;
 import fun.timu.shop.coupon.manager.CouponTaskManager;
@@ -116,7 +116,7 @@ public class CouponRecordServiceImpl implements CouponRecordService {
     public JsonData lockCouponRecords(LockCouponRecordRequest recordRequest) {
         // 1. 获取用户ID - 支持RPC调用和普通Web请求
         final Long userId; // 声明为final，确保在lambda中可以使用
-        
+
         // 优先从请求对象中获取userId（RPC调用时传递）
         if (recordRequest != null && recordRequest.getUserId() != null) {
             userId = recordRequest.getUserId();
@@ -267,7 +267,7 @@ public class CouponRecordServiceImpl implements CouponRecordService {
         }
 
         if (recordMessage.getTaskId() == null || recordMessage.getOutTradeNo() == null) {
-            log.warn("释放优惠券记录消息参数不完整: taskId={}, outTradeNo={}", 
+            log.warn("释放优惠券记录消息参数不完整: taskId={}, outTradeNo={}",
                     recordMessage.getTaskId(), recordMessage.getOutTradeNo());
             return true; // 参数不完整直接确认
         }
@@ -287,14 +287,14 @@ public class CouponRecordServiceImpl implements CouponRecordService {
 
             // 3. 检查任务状态，只处理LOCK状态的任务
             if (!StockTaskStateEnum.LOCK.name().equalsIgnoreCase(taskDO.getLockState())) {
-                log.info("优惠券任务状态非LOCK，无需处理: taskId={}, currentState={}, outTradeNo={}", 
+                log.info("优惠券任务状态非LOCK，无需处理: taskId={}, currentState={}, outTradeNo={}",
                         taskId, taskDO.getLockState(), outTradeNo);
                 return true; // 非LOCK状态直接确认
             }
 
             // 4. 查询订单状态
             OrderStateEnum orderState = queryOrderState(outTradeNo);
-            
+
             // 5. 根据订单状态处理任务
             return processTaskByOrderState(taskDO, orderState, recordMessage);
 
@@ -312,12 +312,12 @@ public class CouponRecordServiceImpl implements CouponRecordService {
             // 构建请求参数
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("outTradeNo", outTradeNo);
-            
+
             // 调用Feign客户端查询订单状态（RPC安全头部由拦截器自动添加）
             JsonData jsonData = feignService.queryProductOrderState(requestBody);
-            
+
             if (jsonData == null || jsonData.getCode() != 0) {
-                log.warn("查询订单状态失败或订单不存在: outTradeNo={}, response={}", 
+                log.warn("查询订单状态失败或订单不存在: outTradeNo={}, response={}",
                         outTradeNo, jsonData != null ? jsonData.getCode() : "null");
                 return null; // 返回null表示查询失败或订单不存在
             }
@@ -383,20 +383,20 @@ public class CouponRecordServiceImpl implements CouponRecordService {
             // 更新任务状态为FINISH
             taskDO.setLockState(StockTaskStateEnum.FINISH.name());
             taskDO.setUpdateTime(new Date());
-            
+
             boolean updateSuccess = taskManager.updateEntity(taskDO, taskDO.getId());
             if (!updateSuccess) {
-                log.error("更新任务状态为FINISH失败: taskId={}, outTradeNo={}", 
+                log.error("更新任务状态为FINISH失败: taskId={}, outTradeNo={}",
                         taskDO.getId(), recordMessage.getOutTradeNo());
                 return false; // 更新失败重新投递
             }
 
-            log.info("订单已支付，任务状态更新为FINISH: taskId={}, outTradeNo={}", 
+            log.info("订单已支付，任务状态更新为FINISH: taskId={}, outTradeNo={}",
                     taskDO.getId(), recordMessage.getOutTradeNo());
             return true;
 
         } catch (Exception e) {
-            log.error("处理已支付订单异常: taskId={}, outTradeNo={}", 
+            log.error("处理已支付订单异常: taskId={}, outTradeNo={}",
                     taskDO.getId(), recordMessage.getOutTradeNo(), e);
             return false;
         }
@@ -414,7 +414,7 @@ public class CouponRecordServiceImpl implements CouponRecordService {
             // 1. 更新任务状态为CANCEL
             taskDO.setLockState(StockTaskStateEnum.CANCEL.name());
             taskDO.setUpdateTime(new Date());
-            
+
             boolean taskUpdateSuccess = taskManager.updateEntity(taskDO, taskId);
             if (!taskUpdateSuccess) {
                 log.error("更新任务状态为CANCEL失败: taskId={}, outTradeNo={}", taskId, outTradeNo);
@@ -424,12 +424,12 @@ public class CouponRecordServiceImpl implements CouponRecordService {
             // 2. 恢复优惠券记录状态为NEW
             recordManager.updateState(couponRecordId, CouponStateEnum.NEW.name());
 
-            log.info("订单取消，优惠券已释放: taskId={}, couponRecordId={}, outTradeNo={}", 
+            log.info("订单取消，优惠券已释放: taskId={}, couponRecordId={}, outTradeNo={}",
                     taskId, couponRecordId, outTradeNo);
             return true;
 
         } catch (Exception e) {
-            log.error("处理已取消订单异常: taskId={}, outTradeNo={}", 
+            log.error("处理已取消订单异常: taskId={}, outTradeNo={}",
                     taskDO.getId(), recordMessage.getOutTradeNo(), e);
             return false;
         }

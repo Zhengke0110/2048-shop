@@ -7,6 +7,7 @@ import fun.timu.shop.common.enums.SendCodeEnum;
 import fun.timu.shop.common.interceptor.LoginInterceptor;
 import fun.timu.shop.common.model.LoginUser;
 import fun.timu.shop.common.model.TokenPairVO;
+import fun.timu.shop.common.request.NewUserBenefitsRequest;
 import fun.timu.shop.common.util.CommonUtil;
 import fun.timu.shop.common.util.JWTUtil;
 import fun.timu.shop.common.util.JsonData;
@@ -260,12 +261,12 @@ public class UserServiceImpl implements UserService {
             log.info("开始为新用户发放福利: userId={}, email={}", userDO.getId(), userDO.getMail());
 
             // 准备请求参数
-            Map<String, Object> request = new HashMap<>();
-            request.put("userId", userDO.getId());
+            NewUserBenefitsRequest benefitsRequest = new NewUserBenefitsRequest();
+            benefitsRequest.setUserId(userDO.getId());
 
             // 调用优惠券服务的新用户福利发放接口
             // 具体发放什么优惠券由优惠券服务决定，用户服务只负责触发
-            JsonData result = couponFeignService.grantNewUserBenefits(request);
+            JsonData result = couponFeignService.grantNewUserBenefits(benefitsRequest);
 
             if (result != null && result.getCode() == 0) {
                 log.info("新用户福利发放成功: userId={}, result={}", userDO.getId(), result.getData());
