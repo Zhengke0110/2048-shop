@@ -2,7 +2,6 @@ package fun.timu.shop.coupon.config;
 
 import fun.timu.shop.common.config.FeignRpcSecurityInterceptor;
 import feign.RequestInterceptor;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,7 +12,6 @@ import org.springframework.context.annotation.Configuration;
  * @author zhengke
  */
 @Configuration
-@EnableFeignClients(basePackages = "fun.timu.shop.coupon.feign")
 public class CouponFeignConfig {
     
     /**

@@ -14,7 +14,7 @@ import java.util.Map;
  * @author zhengke
  */
 @FeignClient(name = "shop-order-service",  // Nacos中注册的服务名
-        path = "/api/order/v1/rpc"  // 服务的基础路径
+        path = "/api/order/v1"  // 服务的基础路径
 )
 public interface ProductOrderFeignService {
 
@@ -26,6 +26,6 @@ public interface ProductOrderFeignService {
      * @param requestBody 包含订单号的请求体
      * @return 订单状态信息
      */
-    @PostMapping("/query-state")
+    @PostMapping("/rpc/query-state")
     JsonData queryProductOrderState(@RequestBody Map<String, Object> requestBody);
 }

@@ -13,7 +13,7 @@ import java.util.Map;
  *
  * @author zhengke
  */
-@FeignClient(name = "shop-coupon-service", path = "/api/coupon/v1/rpc")
+@FeignClient(name = "shop-coupon-service", path = "/api/coupon/v1")
 public interface CouponFeignService {
 
     /**
@@ -23,6 +23,6 @@ public interface CouponFeignService {
      * @param request 请求参数，包含userId
      * @return 发放结果
      */
-    @PostMapping("/new-user-benefits")
+    @PostMapping("/rpc/new-user-benefits")
     JsonData grantNewUserBenefits(@RequestBody Map<String, Object> request);
 }
