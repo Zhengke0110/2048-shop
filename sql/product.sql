@@ -50,3 +50,22 @@ CREATE TABLE
         KEY `idx_sales` (`sales_count`),
         KEY `idx_del_flag` (`del_flag`)
     ) ENGINE = InnoDB AUTO_INCREMENT = 5 DEFAULT CHARSET = utf8mb4 COMMENT = '商品表';
+
+
+CREATE TABLE `coupon_task` (
+  `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT,
+  `coupon_record_id` bigint(11) unsigned NOT NULL COMMENT '优惠券记录id',
+  `user_id` bigint(11) NOT NULL COMMENT '用户id',
+  `out_trade_no` varchar(64) NOT NULL COMMENT '订单号',
+  `lock_state` varchar(32) DEFAULT 'LOCK' COMMENT '锁定状态 LOCK锁定 FINISH完成 CANCEL取消',
+  `expire_time` datetime NOT NULL COMMENT '锁定过期时间',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  -- 索引
+  UNIQUE KEY `uk_out_trade_no_coupon` (`out_trade_no`, `coupon_record_id`) COMMENT '订单优惠券唯一索引',
+  INDEX `idx_coupon_record_id` (`coupon_record_id`) COMMENT '优惠券记录ID索引',
+  INDEX `idx_user_id` (`user_id`) COMMENT '用户ID索引',
+  INDEX `idx_lock_state` (`lock_state`) COMMENT '锁定状态索引',
+  INDEX `idx_expire_time` (`expire_time`) COMMENT '过期时间索引',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='优惠券锁定任务表';

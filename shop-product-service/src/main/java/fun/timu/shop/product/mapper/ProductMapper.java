@@ -40,7 +40,7 @@ public interface ProductMapper extends BaseMapper<ProductDO> {
     int lockStock(@Param("id") Long id, @Param("quantity") Integer quantity);
 
     /**
-     * 释放锁定库存
+     * 释放锁定库存（将锁定库存转为可用库存）
      *
      * @param id       商品ID
      * @param quantity 释放数量
